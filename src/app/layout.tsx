@@ -24,13 +24,6 @@ export default function RootLayout({
     }
   }, []);
 
-  const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedLanguage = event.target.value;
-    localStorage.setItem(I18N_STORAGE_KEY, selectedLanguage);
-    setLanguage(selectedLanguage);
-    window.location.reload();
-  };
-
   const toggleMenu = useCallback(() => {
     setMenuOpen((prev) => !prev);
   }, []);
@@ -49,7 +42,7 @@ export default function RootLayout({
   }, []);
 
   return (
-    <html lang={language}>
+    <html>
       <body>
         <header className="flex items-center ml-24 mt-10 p-4">
           <div className="flex items-center">
