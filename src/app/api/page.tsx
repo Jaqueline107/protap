@@ -1,3 +1,7 @@
+const api = () => {
+  return <div>teste</div>;
+};
+export default api;
 // "use serve";
 // import { NextApiRequest, NextApiResponse } from "next";
 // import db from "../../db/drizzle";
