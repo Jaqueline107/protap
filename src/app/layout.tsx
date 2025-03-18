@@ -44,7 +44,9 @@ export default function RootLayout({
 
             {/* Título principal para telas grandes */}
             <div className="hidden md:block">
-              <p className="text-black text-3xl font-bold px-9">ProTap</p>
+              <p className="text-black hover:text-red-500 text-3xl font-bold px-9">
+                ProTap
+              </p>
             </div>
 
             {/* Navegação horizontal para telas grandes */}
