@@ -10,19 +10,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const I18N_STORAGE_KEY = "i18nextLng";
-
   const [menuOpen, setMenuOpen] = useState(false);
-  const [language, setLanguage] = useState<string>("pt");
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedLanguage = localStorage.getItem(I18N_STORAGE_KEY);
-      if (storedLanguage) {
-        setLanguage(storedLanguage);
-      }
-    }
-  }, []);
 
   const toggleMenu = useCallback(() => {
     setMenuOpen((prev) => !prev);
