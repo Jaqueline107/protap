@@ -36,7 +36,7 @@ export default function RootLayout({
           <div className="flex items-center">
             {typeof window !== "undefined" && window.innerWidth < 767 && (
               <button className="mr-4">
-                <p className="text-black text-xl font-bold">Geovana Santana</p>
+                <p className="text-black text-xl font-bold">protap</p>
               </button>
             )}
           </div>
