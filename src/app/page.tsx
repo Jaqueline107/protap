@@ -1,7 +1,7 @@
 import Image from "next/image";
 import logo from "../../public/logo.png";
 import product1 from "../../public/opala.png";
-import product2 from "../../public/KombiMala2.png";
+import product2 from "../../public/KombiMala.png";
 import product3 from "../../public/UnoStreet.png";
 
 export default function Home() {
