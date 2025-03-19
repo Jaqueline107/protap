@@ -60,30 +60,6 @@ export default function RootLayout({
                     Home
                   </Link>
                 </li>
-                <li>
-                  <a
-                    href="/About"
-                    className="text-gray-400 text-2xl hover:text-red-500 transition duration-200"
-                  >
-                    Sobre
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="/Product"
-                    className="text-gray-400 text-2xl hover:text-red-500 transition duration-200"
-                  >
-                    Produtos
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="/Contact"
-                    className="text-gray-400 text-2xl hover:text-red-500 transition duration-200"
-                  >
-                    Contato
-                  </a>
-                </li>
               </ul>
             </nav>
           </div>
