@@ -19,7 +19,7 @@ const productsData: Record<string, Product> = {
     price: "R$45,00",
     description:
       "Tapetes projetados para o espaço de bagagem da Kombi. Feito com materiais resistentes e design funcional, ideal para transporte seguro.",
-    images: ["/kombimala.png", "/kombimala1.png", "/kombimala2.png"],
+    images: ["/kombimala.png", "/kombimala1.png", "/kombimala1.png"],
   },
 };
 
