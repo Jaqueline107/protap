@@ -22,7 +22,7 @@ export default function Banner() {
             width={200}
             height={200}
             alt="protap"
-            className="opacity-90 sm:w-[400px] sm:h-[200px]"
+            className="opacity-90 sm:w-[350px] sm:h-[150px]"
           />
         </div>
       </div>
