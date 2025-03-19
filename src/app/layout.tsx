@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { FiMenu, FiX } from "react-icons/fi"; // Importando os ícones
+import { usePathname } from "next/navigation"; // Hook para verificar a rota atual
 import "../app/globals.css"; // Importação do Tailwind
 import Link from "next/link";
 
@@ -11,6 +12,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const pathname = usePathname(); // Obtemos a rota atual
 
   // Alternar entre abrir e fechar o menu
   const toggleMenu = useCallback(() => {
@@ -52,17 +54,20 @@ export default function RootLayout({
             {/* Navegação horizontal para telas grandes */}
             <nav className="hidden md:flex md:gap-14">
               <ul className="flex gap-14 items-baseline">
-                <li>
-                  <Link
-                    href="/"
-                    className="text-gray-400 text-2xl hover:text-red-500 transition duration-200"
-                  >
-                    Home
-                  </Link>
-                </li>
+                {pathname !== "/" && ( // Condição para ocultar o link na página inicial
+                  <li>
+                    <Link
+                      href="/"
+                      className="text-gray-400 text-2xl hover:text-red-500 transition duration-200"
+                    >
+                      Voltar para Galeria
+                    </Link>
+                  </li>
+                )}
               </ul>
             </nav>
           </div>
+
           {/* Sidebar para telas menores */}
           <nav
             className={`fixed top-0 left-0 h-full bg-gray-100 z-50 transform ${
