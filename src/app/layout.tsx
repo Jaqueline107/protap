@@ -1,28 +1,26 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
-import { FiMenu, FiX } from "react-icons/fi"; // Importando os ícones
+import React, { useEffect } from "react";
 import { usePathname } from "next/navigation"; // Hook para verificar a rota atual
 import "../app/globals.css"; // Importação do Tailwind
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [menuOpen, setMenuOpen] = useState(false);
+  // const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname(); // Obtemos a rota atual
 
-  // Alternar entre abrir e fechar o menu
-  const toggleMenu = useCallback(() => {
-    setMenuOpen((prev) => !prev);
-  }, []);
+  // const toggleMenu = useCallback(() => {
+  //   setMenuOpen((prev) => !prev);
+  // }, []);
 
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) {
-        setMenuOpen(false); // Fecha o menu em telas grandes
       }
     };
 
@@ -36,24 +34,22 @@ export default function RootLayout({
     <html>
       <body>
         <header className="flex justify-between items-center p-4 relative z-10">
-          <div className="flex justify-between items-center px-6 py-4 lg:px-44 md:px-12">
-            {/* Ícone de menu para dispositivos menores */}
-            <FiMenu
-              className="menu-icon cursor-pointer md:hidden"
-              onClick={toggleMenu}
-              size={30}
-            />
+          <div className="flex items-center gap-4 px-6 py-4 lg:px-44 md:px-12">
+            {/* ProTap visível em telas médias e grandes, oculto em telas pequenas */}
+            <p className="hidden md:block text-black hover:text-red-500 text-3xl font-bold">
+              ProTap
+            </p>
 
-            {/* Título principal para telas grandes */}
-            <div className="hidden md:block">
-              <p className="text-black hover:text-red-500 text-3xl font-bold px-9">
-                ProTap
-              </p>
-            </div>
+            {/* ArrowLeft aparece em páginas diferentes da inicial */}
+            {pathname !== "/" && (
+              <Link href={"/"}>
+                <ArrowLeft className="menu-icon cursor-pointer" size={30} />
+              </Link>
+            )}
 
             {/* Navegação horizontal para telas grandes */}
-            <nav className="hidden md:flex md:gap-14">
-              <ul className="flex gap-14 items-baseline">
+            <nav className="md:flex md:gap-14">
+              <ul className="flex gap-14 ml-5 items-baseline">
                 {pathname !== "/" && ( // Condição para ocultar o link na página inicial
                   <li>
                     <Link
@@ -69,13 +65,12 @@ export default function RootLayout({
           </div>
 
           {/* Sidebar para telas menores */}
-          <nav
+          {/* <nav
             className={`fixed top-0 left-0 h-full bg-gray-100 z-50 transform ${
               menuOpen ? "translate-x-0" : "-translate-x-full"
             } transition-transform duration-300 ease-in-out w-[250px] md:hidden`}
-          >
-            {/* Ícone de close no canto superior direito */}
-            <FiX
+          > */}
+          {/* <FiX
               className="absolute top-5 right-5 cursor-pointer"
               onClick={toggleMenu}
               size={30}
@@ -115,7 +110,7 @@ export default function RootLayout({
                 </a>
               </li>
             </ul>
-          </nav>
+          </nav> */}
         </header>
 
         {/* Conteúdo principal */}
