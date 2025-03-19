@@ -1,35 +1,17 @@
 import Image from "next/image";
-import logo from "../../public/logo.png";
 import product1 from "../../public/opala.png";
 import product2 from "../../public/KombiMala.png";
 import product3 from "../../public/UnoStreet.png";
+import Link from "next/link";
+
+import Banner from "./Components/banner";
 
 export default function Home() {
   return (
     <div className="flex flex-col items-center">
-      <div className="w-5/6">
-        <div className="flex bg-black p-2 rounded-lg w-full h-80 mt-10 justify-center sm:justify-between relative">
-          <div className="hidden sm:flex w-full justify-between ml-20 mr-20">
-            <div>
-              <h1 className="text-6xl font-bold m-5 mt-20 font-pop text-white">
-                ProTap
-              </h1>
-              <h2 className="text-4xl font-light ml-5 -mt-4 text-white">
-                Tapetes de carros
-              </h2>
-            </div>
-          </div>
-          <div className="flex justify-center items-center w-full">
-            <Image
-              src={logo}
-              width={200}
-              height={200}
-              alt="protap"
-              className="opacity-90 sm:w-[400px] sm:h-[200px]"
-            />
-          </div>
-        </div>
-      </div>
+      <Banner />
+
+      {/* Conteúdo Principal */}
       <main className="w-5/6 mt-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="w-full md:w-80 p-5 h-auto bg-white rounded-lg">
@@ -43,41 +25,52 @@ export default function Home() {
               Ver benefícios
             </button>
           </div>
+          {/* Card do Produto Opala */}
           <div className="w-full md:w-80 p-5 h-auto bg-white rounded-lg">
-            <button className="rounded-md p-3 text-black font-semibold text-left w-full h-full">
-              <Image src={product1} width={450} height={200} alt="product1" />
-              <p className="mt-5 text-2xl">Tapete Opala</p>
-              <p className="text-green-500 text-2xl font-semibold">R$39,00</p>
-            </button>
-          </div>
-          <div className="w-full md:w-80 p-5 h-auto bg-white rounded-lg">
-            <button className="rounded-md p-3 text-black font-semibold text-left w-full h-full">
-              <Image src={product3} width={450} height={200} alt="product1" />
-              <p className="mt-5 text-2xl">Tapete Uno Street</p>
-              <p className="text-green-500 text-2xl font-semibold">R$39,00</p>
-            </button>
-          </div>
-          <div className="w-full md:w-80 p-5 h-auto bg-white rounded-lg">
-            <button className="rounded-md p-3 text-black font-semibold text-left w-full h-full">
-              <Image src={product2} width={450} height={200} alt="product2" />
-              <p className="mt-5 text-2xl">Tapete Kombi Mala</p>
-              <p className="text-green-500 text-2xl font-semibold">R$39,00</p>
-            </button>
-          </div>
-          <div className="w-full md:w-80 p-5 h-auto bg-white rounded-lg">
-            <button className="rounded-md p-3 text-black font-semibold text-left w-full h-full">
-              <Image src={product3} width={450} height={200} alt="product2" />
-              <p className="mt-5 text-2xl">Tapete Kombi Mala</p>
-              <p className="text-green-500 text-2xl font-semibold">R$39,00</p>
-            </button>
+            <Link href="/Produtos?produto=Opala">
+              <button className="rounded-md p-3 text-black font-semibold text-left w-full h-full">
+                <Image
+                  src={product1}
+                  width={450}
+                  height={200}
+                  alt="Tapete Opala"
+                />
+                <p className="mt-5 text-2xl">Tapete Opala</p>
+                <p className="text-green-500 text-2xl font-semibold">R$39,00</p>
+              </button>
+            </Link>
           </div>
 
+          {/* Card do Produto Kombi Mala */}
           <div className="w-full md:w-80 p-5 h-auto bg-white rounded-lg">
-            <button className="rounded-md p-3 text-black font-semibold text-left w-full h-full">
-              <Image src={product1} width={450} height={200} alt="product2" />
-              <p className="mt-5 text-2xl">Tapete Opala</p>
-              <p className="text-green-500 text-2xl font-semibold">R$39,00</p>
-            </button>
+            <Link href="/Produtos?produto=KombiMala">
+              <button className="rounded-md p-3 text-black font-semibold text-left w-full h-full">
+                <Image
+                  src={product2}
+                  width={450}
+                  height={200}
+                  alt="Tapete Kombi Mala"
+                />
+                <p className="mt-5 text-2xl">Tapete Kombi Mala</p>
+                <p className="text-green-500 text-2xl font-semibold">R$45,00</p>
+              </button>
+            </Link>
+          </div>
+
+          {/* Card do Produto Uno Street */}
+          <div className="w-full md:w-80 p-5 h-auto bg-white rounded-lg">
+            <Link href="/Produtos?produto=UnoStreet">
+              <button className="rounded-md p-3 text-black font-semibold text-left w-full h-full">
+                <Image
+                  src={product3}
+                  width={450}
+                  height={200}
+                  alt="Tapete Uno Street"
+                />
+                <p className="mt-5 text-2xl">Tapete Uno Street</p>
+                <p className="text-green-500 text-2xl font-semibold">R$35,00</p>
+              </button>
+            </Link>
           </div>
         </div>
       </main>
