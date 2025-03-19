@@ -178,7 +178,7 @@ function ProdutosContent() {
             {product.price}
           </p>
 
-          <button className="bg-green-600 text-white font-semibold text-xl py-3 w-2/6 px-6 rounded-lg hover:bg-green-700 shadow-md transition-all mt-4">
+          <button className="bg-green-600 text-white font-semibold text-xl py-3 md:w-2/6 sm:w-6/6 px-6 rounded-lg hover:bg-green-700 shadow-md transition-all mt-4">
             Comprar Agora
           </button>
 
