@@ -1,12 +1,27 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import product1 from "../../public/opala/opala.png";
 import product2 from "../../public/kombi/kombimala.png";
 import product3 from "../../public/unos/unostreet.png";
-import Link from "next/link";
-
 import Banner from "./Components/banner";
+import Modal from "../app/Components/modal"; // Importa o componente Modal
 
 export default function Home() {
+  const [showModal, setShowModal] = useState(false); // Estado do modal
+  const [selectedProduct, setSelectedProduct] = useState<string | null>(null); // Produto selecionado
+
+  const handleViewBenefits = () => {
+    setShowModal(true); // Exibe o modal
+  };
+
+  const handleProductSelection = (product: string) => {
+    setSelectedProduct(product); // Define o produto selecionado
+    setShowModal(false); // Fecha o modal
+  };
+
   return (
     <div className="flex flex-col items-center">
       <Banner />
@@ -14,6 +29,7 @@ export default function Home() {
       {/* Conteúdo Principal */}
       <main className="w-5/6 mt-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Card de "Ver benefícios" */}
           <div className="w-full md:w-80 p-5 h-auto bg-white rounded-lg">
             <p className="text-black font-semibold text-2xl mb-5">
               Acesse nossa galeria de produtos para visualizar o seu tapete!
@@ -21,10 +37,14 @@ export default function Home() {
             <p className="text-gray-400 text-2xl font-light mb-5">
               Melhores Ofertas
             </p>
-            <button className="rounded-md bg-red-600 hover:bg-opacity-85 p-3 text-white font-semibold text-xl">
+            <button
+              onClick={handleViewBenefits}
+              className="rounded-md bg-red-600 hover:bg-opacity-85 p-3 text-white font-semibold text-xl"
+            >
               Ver benefícios
             </button>
           </div>
+
           {/* Card do Produto Opala */}
           <div className="w-full md:w-80 p-5 h-auto bg-white rounded-lg">
             <Link href="/Produtos?produto=Opala">
@@ -74,6 +94,20 @@ export default function Home() {
           </div>
         </div>
       </main>
+
+      {/* Modal */}
+      <Modal
+        isVisible={showModal}
+        onClose={() => setShowModal(false)} // Fecha o modal
+        onSelect={handleProductSelection} // Seleciona o produto
+      />
+
+      {/* Redirecionamento */}
+      {selectedProduct && (
+        <Link href={`/Produtos?produto=${selectedProduct}`}>
+          <div className="hidden" />
+        </Link>
+      )}
     </div>
   );
 }
