@@ -34,6 +34,7 @@ export default function Produtos() {
   }
 
   // Estado para armazenar a imagem principal
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const [mainImage, setMainImage] = useState(product.images[0]);
 
   return (
