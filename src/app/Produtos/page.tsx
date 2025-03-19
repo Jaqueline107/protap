@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Banner from "../Components/banner";
@@ -14,12 +14,39 @@ type Product = {
 
 // Dados dos produtos
 const productsData: Record<string, Product> = {
-  KombiMala: {
-    name: "Tapete Kombi Mala",
+  Opala: {
+    name: "Tapete Opala",
+    price: "R$39,90",
+    description:
+      "Tapetes projetados para proteger o assoalho do seu carro, Feito com materiais resistentes e design funcional.",
+    images: [
+      "/opala/opala.png",
+      "/opala/opala1.png",
+      "/opala/opala2.png",
+      "/opala/opala3.png",
+      "/opala/beneficio.png",
+      "/opala/beneficio1.png",
+      "/opala/beneficio2.png",
+      "/opala/beneficio3.png",
+    ],
+  },
+  UnoStreet: {
+    name: "Tapete Uno Street",
     price: "R$45,00",
     description:
+      "Tapetes projetados para proteger o assoalho do seu carro, Feito com materiais resistentes e design funcional.",
+    images: [
+      "/unos/unostreet.png",
+      "/unos/unostreet1.png",
+      "/unos/unostreet2.png",
+    ],
+  },
+  KombiMala: {
+    name: "Tapete Kombi Mala",
+    price: "R$81,99",
+    description:
       "Tapetes projetados para o espaço de bagagem da Kombi. Feito com materiais resistentes e design funcional, ideal para transporte seguro.",
-    images: ["/kombimala.png", "/kombimala1.png", "/kombimala1.png"],
+    images: ["/kombi/kombimala.png", "/kombi/kombimala1.png"],
   },
 };
 
@@ -36,13 +63,79 @@ function ProdutosContent() {
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const [mainImage, setMainImage] = useState(product.images[0]);
 
+  // Função para mudar a imagem ao pressionar as setas do teclado
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "ArrowLeft") {
+        // Mudar para a imagem anterior
+        setMainImage((prev) => {
+          const currentIndex = product.images.indexOf(prev);
+          return product.images[
+            (currentIndex - 1 + product.images.length) % product.images.length
+          ];
+        });
+      } else if (event.key === "ArrowRight") {
+        // Mudar para a próxima imagem
+        setMainImage((prev) => {
+          const currentIndex = product.images.indexOf(prev);
+          return product.images[(currentIndex + 1) % product.images.length];
+        });
+      }
+    };
+
+    // Adicionar evento de teclado
+    window.addEventListener("keydown", handleKeyDown);
+
+    // Limpar evento de teclado quando o componente for desmontado
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [product.images]);
+
+  // Função para mudar a imagem ao deslizar no celular
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touchStart = e.touches[0].clientX;
+
+    // Função para capturar o movimento do toque
+    const handleTouchMove = (e: TouchEvent) => {
+      // Corrigido o tipo aqui
+      const touchEnd = e.touches[0].clientX;
+
+      // Verificar direção do toque
+      if (touchStart - touchEnd > 100) {
+        // Deslizou para a esquerda (trocar para próxima imagem)
+        setMainImage((prev) => {
+          const currentIndex = product.images.indexOf(prev);
+          return product.images[(currentIndex + 1) % product.images.length];
+        });
+      } else if (touchEnd - touchStart > 100) {
+        // Deslizou para a direita (trocar para imagem anterior)
+        setMainImage((prev) => {
+          const currentIndex = product.images.indexOf(prev);
+          return product.images[
+            (currentIndex - 1 + product.images.length) % product.images.length
+          ];
+        });
+      }
+    };
+
+    // Adicionar o evento de touchmove
+    window.addEventListener("touchmove", handleTouchMove);
+
+    // Remover o evento touchmove após o toque ser finalizado
+    window.addEventListener("touchend", () => {
+      window.removeEventListener("touchmove", handleTouchMove);
+    });
+  };
+
   return (
     <div className="flex flex-col items-center">
       <Banner />
 
-      <main className="w-5/6 mt-20 flex flex-row gap-12">
+      <main className="w-5/6 mt-20 flex flex-col lg:flex-row gap-12">
         {/* Seção de Imagens */}
-        <div className="flex flex-col items-center w-1/2">
+        <div className="flex flex-col items-center w-full lg:w-1/2">
           <Image
             key={mainImage}
             src={mainImage}
@@ -50,10 +143,12 @@ function ProdutosContent() {
             width={500}
             height={500}
             priority
-            className="rounded-lg shadow-md"
+            className="rounded-sm"
+            onTouchStart={handleTouchStart}
           />
 
-          <div className="flex gap-4 mt-4">
+          {/* Aqui removi a rolagem horizontal e adicionei uma classe para alinhamento das miniaturas */}
+          <div className="flex h-32 gap-4 mt-8 justify-center">
             {product.images.map((src, index) => (
               <button
                 key={index}
@@ -63,8 +158,8 @@ function ProdutosContent() {
                 <Image
                   src={src}
                   alt={`Miniatura ${index}`}
-                  width={70}
-                  height={50}
+                  width={110} // Tamanho maior para desktop
+                  height={70}
                   className={`cursor-pointer rounded-md border transition-all ${
                     mainImage === src
                       ? "border-green-500 scale-105"
@@ -77,7 +172,7 @@ function ProdutosContent() {
         </div>
 
         {/* Seção de Informações */}
-        <div className="w-1/2 flex flex-col justify-start">
+        <div className="w-full lg:w-1/2 flex flex-col justify-start mt-6 lg:mt-0">
           <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
           <p className="text-green-600 text-4xl font-bold mt-2">
             {product.price}
