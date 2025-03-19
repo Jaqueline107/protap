@@ -1,7 +1,7 @@
 import Image from "next/image";
 import product1 from "../../public/opala.png";
-import product2 from "../../public/KombiMala.png";
-import product3 from "../../public/UnoStreet.png";
+import product2 from "../../public/kombimala.png";
+import product3 from "../../public/unostreet.png";
 import Link from "next/link";
 
 import Banner from "./Components/banner";
