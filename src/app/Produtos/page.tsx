@@ -179,14 +179,12 @@ function ProdutosContent() {
           </p>
 
           <button
-            onClick={() =>
-              window.open(
-                `https://wa.me/551199186-1237?text=${encodeURIComponent(
-                  `Olá, gostaria de comprar o ${product.name} pelo preço de ${product.price}.`
-                )}`,
-                "_blank"
-              )
-            }
+            onClick={() => {
+              const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(
+                `Olá, gostaria de comprar o ${product.name} pelo preço de ${product.price}.`
+              )}`;
+              window.open(whatsappUrl, "_blank");
+            }}
             className="bg-green-600 text-white font-semibold text-xl py-3 md:w-2/6 sm:w-6/6 px-6 rounded-lg hover:bg-green-700 shadow-md transition-all mt-4"
           >
             Comprar Agora
