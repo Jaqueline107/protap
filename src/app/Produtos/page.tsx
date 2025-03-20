@@ -180,9 +180,18 @@ function ProdutosContent() {
 
           <button
             onClick={() => {
-              const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(
-                `Olá, gostaria de comprar o ${product.name} pelo preço de ${product.price}.`
+              // Mensagem para o WhatsApp
+              const message = `Olá, gostaria de comprar o ${product.name} pelo preço de ${product.price}.`;
+
+              // Número de telefone do WhatsApp com DDD
+              const phoneNumber = "5511991861237";
+
+              // URL formatado para abrir no WhatsApp com a mensagem e número
+              const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
+                message
               )}`;
+
+              // Abrir o link no WhatsApp (web ou mobile)
               window.open(whatsappUrl, "_blank");
             }}
             className="bg-green-600 text-white font-semibold text-xl py-3 md:w-2/6 sm:w-6/6 px-6 rounded-lg hover:bg-green-700 shadow-md transition-all mt-4"
