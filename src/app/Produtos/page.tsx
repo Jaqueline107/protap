@@ -32,7 +32,7 @@ const productsData: Record<string, Product> = {
   },
   UnoStreet: {
     name: "Tapete Uno Street",
-    price: "R$45,00",
+    price: "R$39,00",
     description:
       "Tapetes projetados para proteger o assoalho do seu carro, Feito com materiais resistentes e design funcional.",
     images: [
@@ -47,6 +47,27 @@ const productsData: Record<string, Product> = {
     description:
       "Tapetes projetados para o espaço de bagagem da Kombi. Feito com materiais resistentes e design funcional, ideal para transporte seguro.",
     images: ["/kombi/kombimala.png", "/kombi/kombimala1.png"],
+  },
+  Hb20s: {
+    name: "Tapete HB20s street",
+    price: "R$39,00",
+    description:
+      "Tapetes projetados para o espaço de bagagem da Kombi. Feito com materiais resistentes e design funcional, ideal para transporte seguro.",
+    images: ["/hb20/hb20.png", "/hb20/hb201.png"],
+  },
+  Tcross: {
+    name: "Tapete Tcross",
+    price: "R$109,91",
+    description:
+      "Tapetes exclusivos para o T-Cross, com bordado elegante e base pinada para maior aderência. Oferecem proteção, estilo e segurança ao interior do veículo.",
+    images: ["/Tcross.png", "/Tcross.png"],
+  },
+  Polo: {
+    name: "Tapete Polo",
+    price: "R$112,50",
+    description:
+      "Tapetes sob medida para o Polo, combinando bordado exclusivo e base pinada para maior aderência. Proporcionam elegância, proteção e segurança ao interior do veículo.",
+    images: ["/polo/polo.png", "/beneficio/polo.png"],
   },
 };
 

@@ -3,11 +3,47 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import product1 from "../../public/opala/opala.png";
-import product2 from "../../public/kombi/kombimala.png";
-import product3 from "../../public/unos/unostreet.png";
 import Banner from "./Components/banner";
 import Modal from "../app/Components/modal"; // Importa o componente Modal
+
+// Array de produtos
+const products = [
+  {
+    id: 1,
+    name: "Tapete Opala",
+    price: "R$39,00",
+    image: "/opala/opala.png",
+    href: "/Produtos?produto=Opala",
+  },
+  {
+    id: 2,
+    name: "Tapete Kombi Mala",
+    price: "R$45,00",
+    image: "/kombi/kombimala.png",
+    href: "/Produtos?produto=KombiMala",
+  },
+  {
+    id: 3,
+    name: "Tapete Uno Street",
+    price: "R$35,00",
+    image: "/unos/unostreet.png",
+    href: "/Produtos?produto=UnoStreet",
+  },
+  {
+    id: 4,
+    name: "Tapete Hb20s Street",
+    price: "R$35,00",
+    image: "/hb20/hb20.png",
+    href: "/Produtos?produto=Hb20s",
+  },
+  {
+    id: 5,
+    name: "Tapete Tcross",
+    price: "R$109,80",
+    image: "/tcross.png",
+    href: "/Produtos?produto=Tcross",
+  },
+];
 
 export default function Home() {
   const [showModal, setShowModal] = useState(false); // Estado do modal
@@ -45,53 +81,28 @@ export default function Home() {
             </button>
           </div>
 
-          {/* Card do Produto Opala */}
-          <div className="w-full md:w-80 p-5 h-auto bg-white rounded-lg">
-            <Link href="/Produtos?produto=Opala">
-              <button className="rounded-md p-3 text-black font-semibold text-left w-full h-full">
-                <Image
-                  src={product1}
-                  width={450}
-                  height={200}
-                  alt="Tapete Opala"
-                />
-                <p className="mt-5 text-2xl">Tapete Opala</p>
-                <p className="text-green-500 text-2xl font-semibold">R$39,00</p>
-              </button>
-            </Link>
-          </div>
-
-          {/* Card do Produto Kombi Mala */}
-          <div className="w-full md:w-80 p-5 h-auto bg-white rounded-lg">
-            <Link href="/Produtos?produto=KombiMala">
-              <button className="rounded-md p-3 text-black font-semibold text-left w-full h-full">
-                <Image
-                  src={product2}
-                  width={450}
-                  height={200}
-                  alt="Tapete Kombi Mala"
-                />
-                <p className="mt-5 text-2xl">Tapete Kombi Mala</p>
-                <p className="text-green-500 text-2xl font-semibold">R$45,00</p>
-              </button>
-            </Link>
-          </div>
-
-          {/* Card do Produto Uno Street */}
-          <div className="w-full md:w-80 p-5 h-auto bg-white rounded-lg">
-            <Link href="/Produtos?produto=UnoStreet">
-              <button className="rounded-md p-3 text-black font-semibold text-left w-full h-full">
-                <Image
-                  src={product3}
-                  width={450}
-                  height={200}
-                  alt="Tapete Uno Street"
-                />
-                <p className="mt-5 text-2xl">Tapete Uno Street</p>
-                <p className="text-green-500 text-2xl font-semibold">R$35,00</p>
-              </button>
-            </Link>
-          </div>
+          {/* Iteração dos produtos */}
+          {products.map((product) => (
+            <div
+              key={product.id}
+              className="w-full md:w-80 p-5 h-auto bg-white rounded-lg"
+            >
+              <Link href={product.href}>
+                <button className="rounded-md p-3 text-black font-semibold text-left w-full h-full">
+                  <Image
+                    src={product.image}
+                    width={450}
+                    height={200}
+                    alt={product.name}
+                  />
+                  <p className="mt-5 text-2xl">{product.name}</p>
+                  <p className="text-green-500 text-2xl font-semibold">
+                    {product.price}
+                  </p>
+                </button>
+              </Link>
+            </div>
+          ))}
         </div>
       </main>
 
