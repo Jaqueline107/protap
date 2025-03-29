@@ -43,6 +43,13 @@ const products = [
     image: "/tcross.png",
     href: "/Produtos?produto=Tcross",
   },
+  {
+    id: 6,
+    name: "Tapete Hilux",
+    price: "R$109,80",
+    image: "/hilux/hiluxfrente.png",
+    href: "/Produtos?produto=Tcross",
+  },
 ];
 
 export default function Home() {
@@ -70,9 +77,24 @@ export default function Home() {
             <p className="text-black font-semibold text-2xl mb-5">
               Acesse nossa galeria de produtos para visualizar o seu tapete!
             </p>
-            <p className="text-gray-400 text-2xl font-light mb-5">
+
+            <p className="text-gray-500 text-2xl font-light mb-5">
               Melhores Ofertas
             </p>
+            <p className="text-gray-500 text-md font-light mb-5">
+              Caso o seu modelo não estiver listado, entre em contato conosco
+              pelo WhatsApp{" "}
+              <a
+                href="https://wa.me/5511991861237"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 underline font-semibold ml-1"
+              >
+                (11) 99186-1237
+              </a>
+              .
+            </p>
+
             <button
               onClick={handleViewBenefits}
               className="rounded-md bg-red-600 hover:bg-opacity-85 p-3 text-white font-semibold text-xl"
