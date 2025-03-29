@@ -69,6 +69,13 @@ const productsData: Record<string, Product> = {
       "Tapetes sob medida para o Polo, combinando bordado exclusivo e base pinada para maior aderência. Proporcionam elegância, proteção e segurança ao interior do veículo.",
     images: ["/polo/polo.png", "/beneficio/polo.png"],
   },
+  Hilux: {
+    name: "Tapete Hilux",
+    price: "R$112,50",
+    description:
+      "Tapetes sob medida para a Hilux, desenvolvidos com bordado exclusivo e base pinada para garantir aderência e segurança. Proporcionam estilo, proteção e durabilidade ao interior do veículo, alinhando conforto e sofisticação.",
+    images: ["/hilux/hilux.png", "/hilux/hilux.png"],
+  },
 };
 
 function ProdutosContent() {
