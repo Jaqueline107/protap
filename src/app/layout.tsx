@@ -36,9 +36,11 @@ export default function RootLayout({
         <header className="flex justify-between items-center p-4 relative z-10">
           <div className="flex items-center gap-4 px-6 py-4 lg:px-44 md:px-12">
             {/* ProTap visível em telas médias e grandes, oculto em telas pequenas */}
-            <p className="hidden md:block text-black hover:text-red-500 text-3xl font-bold">
-              ProTap
-            </p>
+            <Link href={"/"}>
+              <p className="hidden md:block text-black hover:text-red-500 text-3xl font-bold">
+                ProTap
+              </p>
+            </Link>
 
             {/* ArrowLeft aparece em páginas diferentes da inicial */}
             {pathname !== "/" && (
