@@ -46,7 +46,7 @@ export default function Modal({ isVisible, onClose, onSelect }: ModalProps) {
           <Link href="/Produtos?produto=Opala">
             <button
               onClick={() => onSelect("Opala")}
-              className="w-full bg-gray-200 hover:bg-lime-200 p-3 rounded-md text-xl text-left"
+              className="w-full bg-gray-200 hover:bg-green-400 p-3 rounded-md text-xl text-left"
             >
               Tapete Opala
             </button>
@@ -54,7 +54,7 @@ export default function Modal({ isVisible, onClose, onSelect }: ModalProps) {
           <Link href="/Produtos?produto=KombiMala">
             <button
               onClick={() => onSelect("KombiMala")}
-              className="w-full bg-gray-200 hover:bg-lime-200 p-3 rounded-md text-xl text-left"
+              className="w-full bg-gray-200 hover:bg-green-400 p-3 rounded-md text-xl text-left"
             >
               Tapete Kombi Mala
             </button>
@@ -62,7 +62,7 @@ export default function Modal({ isVisible, onClose, onSelect }: ModalProps) {
           <Link href="/Produtos?produto=UnoStreet">
             <button
               onClick={() => onSelect("UnoStreet")}
-              className="w-full bg-gray-200 hover:bg-lime-200 p-3 rounded-md text-xl text-left"
+              className="w-full bg-gray-200 hover:bg-green-400 p-3 rounded-md text-xl text-left"
             >
               Tapete Uno Street
             </button>
@@ -70,7 +70,7 @@ export default function Modal({ isVisible, onClose, onSelect }: ModalProps) {
           <Link href="/Produtos?produto=Hb20s">
             <button
               onClick={() => onSelect("Hb20s")}
-              className="w-full bg-gray-200 hover:bg-lime-200 p-3 rounded-md text-xl text-left"
+              className="w-full bg-gray-200 hover:bg-green-400 p-3 rounded-md text-xl text-left"
             >
               Tapete HB20s street
             </button>
@@ -78,7 +78,7 @@ export default function Modal({ isVisible, onClose, onSelect }: ModalProps) {
           <Link href="/Produtos?produto=Tcross">
             <button
               onClick={() => onSelect("Tcross")}
-              className="w-full bg-gray-200 hover:bg-lime-200 p-3 rounded-md text-xl text-left"
+              className="w-full bg-gray-200 hover:bg-green-400 p-3 rounded-md text-xl text-left"
             >
               Tapete T-Cross
             </button>
@@ -86,7 +86,7 @@ export default function Modal({ isVisible, onClose, onSelect }: ModalProps) {
           <Link href="/Produtos?produto=Polo">
             <button
               onClick={() => onSelect("Polo")}
-              className="w-full bg-gray-200 hover:bg-lime-200 p-3 rounded-md text-xl text-left"
+              className="w-full bg-gray-200 hover:bg-green-400 p-3 rounded-md text-xl text-left"
             >
               Tapete Polo
             </button>
