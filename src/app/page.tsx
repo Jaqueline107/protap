@@ -6,56 +6,126 @@ import Link from "next/link";
 import Banner from "./Components/banner";
 import Modal from "../app/Components/modal"; // Importa o componente Modal
 
-// Array de produtos
+// Função para calcular desconto
+const calculateDiscount = (fullPrice: string): string => {
+  const numericPrice = parseFloat(
+    fullPrice.replace("R$", "").replace(",", ".")
+  );
+  const discountedPrice = (numericPrice * 0.7).toFixed(2); // Aplica 30% de desconto
+  return `R$${discountedPrice.replace(".", ",")}`;
+};
+
+// Função para calcular percentagem de desconto
+const calculateDiscountPercentage = (
+  fullPrice: string,
+  price: string
+): number => {
+  const numericFullPrice = parseFloat(
+    fullPrice.replace("R$", "").replace(",", ".")
+  );
+  const numericPrice = parseFloat(price.replace("R$", "").replace(",", "."));
+  const discountPercentage =
+    ((numericFullPrice - numericPrice) / numericFullPrice) * 100;
+  return Math.round(discountPercentage); // Retorna valor arredondado
+};
+
+// Array de produtos com preços cheios e descontos aplicados dinamicamente
 const products = [
   {
     id: 1,
     name: "Tapete Opala",
-    price: "R$39,00",
+    fullPrice: "R$50,00",
+    price: calculateDiscount("R$50,00"),
+    discount: calculateDiscountPercentage(
+      "R$50,00",
+      calculateDiscount("R$50,00")
+    ),
     image: "/opala/opala.png",
     href: "/Produtos?produto=Opala",
   },
   {
     id: 2,
     name: "Tapete Kombi Mala",
-    price: "R$45,00",
+    fullPrice: "R$100,00",
+    price: calculateDiscount("R$100,00"),
+    discount: calculateDiscountPercentage(
+      "R$100,00",
+      calculateDiscount("R$100,00")
+    ),
     image: "/kombi/kombimala.png",
     href: "/Produtos?produto=KombiMala",
   },
   {
     id: 3,
     name: "Tapete Uno Street",
-    price: "R$35,00",
+    fullPrice: "R$50,00",
+    price: calculateDiscount("R$50,00"),
+    discount: calculateDiscountPercentage(
+      "R$50,00",
+      calculateDiscount("R$50,00")
+    ),
     image: "/unos/unostreet.png",
     href: "/Produtos?produto=UnoStreet",
   },
   {
     id: 4,
     name: "Tapete Hb20s Street",
-    price: "R$35,00",
+    fullPrice: "R$50,00",
+    price: calculateDiscount("R$50,00"),
+    discount: calculateDiscountPercentage(
+      "R$50,00",
+      calculateDiscount("R$50,00")
+    ),
     image: "/hb20/hb20.png",
     href: "/Produtos?produto=Hb20s",
   },
   {
     id: 5,
     name: "Tapete Tcross",
-    price: "R$109,80",
+    fullPrice: "R$120,00",
+    price: calculateDiscount("R$120,00"),
+    discount: calculateDiscountPercentage(
+      "R$120,00",
+      calculateDiscount("R$120,00")
+    ),
     image: "/tcross.png",
     href: "/Produtos?produto=Tcross",
   },
   {
     id: 6,
     name: "Tapete Hilux",
-    price: "R$109,80",
+    fullPrice: "R$140,00",
+    price: calculateDiscount("R$140,00"),
+    discount: calculateDiscountPercentage(
+      "R$140,00",
+      calculateDiscount("R$140,00")
+    ),
     image: "/hilux/hiluxfrente.png",
     href: "/Produtos?produto=Hilux",
   },
   {
     id: 7,
     name: "Tapete Toro",
-    price: "R$ 91,00",
+    fullPrice: "R$130,00",
+    price: calculateDiscount("R$130,00"),
+    discount: calculateDiscountPercentage(
+      "R$130,00",
+      calculateDiscount("R$130,00")
+    ),
     image: "/toro/toro.png",
     href: "/Produtos?produto=Toro",
+  },
+  {
+    id: 8,
+    name: "Tapete Polo",
+    fullPrice: "R$115,00",
+    price: calculateDiscount("R$115,00"),
+    discount: calculateDiscountPercentage(
+      "R$115,00",
+      calculateDiscount("R$115,00")
+    ),
+    image: "/polo/polo.png",
+    href: "/Produtos?produto=Polo",
   },
 ];
 
@@ -125,8 +195,14 @@ export default function Home() {
                     alt={product.name}
                   />
                   <p className="mt-5 text-2xl">{product.name}</p>
-                  <p className="text-green-500 text-2xl font-semibold">
+                  <p className="text-gray-400 line-through text-xl">
+                    {product.fullPrice}
+                  </p>
+                  <p className="text-gray-800 text-2xl font-semibold">
                     {product.price}
+                  </p>
+                  <p className="text-green-600 text-lg font-semibold">
+                    {product.discount}% OFF
                   </p>
                 </button>
               </Link>
