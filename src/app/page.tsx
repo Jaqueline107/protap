@@ -48,7 +48,14 @@ const products = [
     name: "Tapete Hilux",
     price: "R$109,80",
     image: "/hilux/hiluxfrente.png",
-    href: "/Produtos?produto=Tcross",
+    href: "/Produtos?produto=Hilux",
+  },
+  {
+    id: 7,
+    name: "Tapete Toro",
+    price: "R$ 91,00",
+    image: "/toro/toro.png",
+    href: "/Produtos?produto=Toro",
   },
 ];
 
@@ -75,7 +82,7 @@ export default function Home() {
           {/* Card de "Ver benefícios" */}
           <div className="w-full md:w-80 p-5 h-auto bg-white rounded-lg">
             <p className="text-black font-semibold text-2xl mb-5">
-              Acesse nossa galeria de produtos para visualizar o seu tapete!
+              Tapetes de altissma qualidade, feitos especialmente para você.
             </p>
 
             <p className="text-gray-500 text-2xl font-light mb-5">
@@ -83,12 +90,12 @@ export default function Home() {
             </p>
             <p className="text-gray-500 text-md font-light mb-5">
               Caso o seu modelo não estiver listado, entre em contato conosco
-              pelo WhatsApp{" "}
+              pelo WhatsApp
               <a
                 href="https://wa.me/5511991861237"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-500 underline font-semibold ml-1"
+                className="text-blue-500 underline font-semibold ml-"
               >
                 (11) 99186-1237
               </a>

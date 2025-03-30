@@ -8,15 +8,39 @@ import Banner from "../Components/banner";
 type Product = {
   name: string;
   price: string;
+  fullPrice: string; // O preço cheio será sempre obrigatório para calcular o desconto
   description: string;
   images: string[];
 };
 
-// Dados dos produtos
+// Função para calcular desconto
+const calculateDiscount = (fullPrice: string): string => {
+  const numericPrice = parseFloat(
+    fullPrice.replace("R$", "").replace(",", ".")
+  );
+  const discountedPrice = (numericPrice * 0.7).toFixed(2); // Aplica 30% de desconto
+  return `R$${discountedPrice.replace(".", ",")}`; // Formata como string no padrão brasileiro
+};
+
+const calculateDiscountPercentage = (
+  fullPrice: string,
+  price: string
+): number => {
+  const numericFullPrice = parseFloat(
+    fullPrice.replace("R$", "").replace(",", ".")
+  );
+  const numericPrice = parseFloat(price.replace("R$", "").replace(",", "."));
+  const discountPercentage =
+    ((numericFullPrice - numericPrice) / numericFullPrice) * 100;
+  return Math.round(discountPercentage); // Retorna o valor arredondado
+};
+
+// Dados dos produtos com desconto aplicado
 const productsData: Record<string, Product> = {
   Opala: {
     name: "Tapete Opala",
-    price: "R$39,90",
+    fullPrice: "R$50,00",
+    price: calculateDiscount("R$50,00"), // Preço com desconto
     description:
       "Tapetes projetados para proteger o assoalho do seu carro, Feito com materiais resistentes e design funcional.",
     images: [
@@ -32,7 +56,8 @@ const productsData: Record<string, Product> = {
   },
   UnoStreet: {
     name: "Tapete Uno Street",
-    price: "R$39,00",
+    fullPrice: "R$50,00",
+    price: calculateDiscount("R$50,00"),
     description:
       "Tapetes projetados para proteger o assoalho do seu carro, Feito com materiais resistentes e design funcional.",
     images: [
@@ -43,38 +68,51 @@ const productsData: Record<string, Product> = {
   },
   KombiMala: {
     name: "Tapete Kombi Mala",
-    price: "R$81,99",
+    fullPrice: "R$110,00",
+    price: calculateDiscount("R$110,00"),
     description:
       "Tapetes projetados para o espaço de bagagem da Kombi. Feito com materiais resistentes e design funcional, ideal para transporte seguro.",
     images: ["/kombi/kombimala.png", "/kombi/kombimala1.png"],
   },
   Hb20s: {
-    name: "Tapete HB20s street",
-    price: "R$39,00",
+    name: "Tapete HB20s Street",
+    fullPrice: "R$50,00",
+    price: calculateDiscount("R$50,00"),
     description:
       "Tapetes projetados para o espaço de bagagem da Kombi. Feito com materiais resistentes e design funcional, ideal para transporte seguro.",
     images: ["/hb20/hb20.png", "/hb20/hb201.png"],
   },
   Tcross: {
     name: "Tapete Tcross",
-    price: "R$109,91",
+    fullPrice: "R$115,00",
+    price: calculateDiscount("R$120,00"),
     description:
       "Tapetes exclusivos para o T-Cross, com bordado elegante e base pinada para maior aderência. Oferecem proteção, estilo e segurança ao interior do veículo.",
     images: ["/Tcross.png", "/Tcross.png"],
   },
   Polo: {
     name: "Tapete Polo",
-    price: "R$112,50",
+    fullPrice: "R$115,00",
+    price: calculateDiscount("R$115,00"),
     description:
       "Tapetes sob medida para o Polo, combinando bordado exclusivo e base pinada para maior aderência. Proporcionam elegância, proteção e segurança ao interior do veículo.",
     images: ["/polo/polo.png", "/beneficio/polo.png"],
   },
   Hilux: {
-    name: "Tapete Hilux",
-    price: "R$112,50",
+    name: "Tapete Caçamba Hilux",
+    fullPrice: "R$ 140,00",
+    price: calculateDiscount("R$ 140,00"),
     description:
       "Tapetes sob medida para a Hilux, desenvolvidos com bordado exclusivo e base pinada para garantir aderência e segurança. Proporcionam estilo, proteção e durabilidade ao interior do veículo, alinhando conforto e sofisticação.",
-    images: ["/hilux/hilux.png", "/hilux/hilux.png"],
+    images: ["/hilux/hiluxfrente.png", "/hilux/hilux.png"],
+  },
+  Toro: {
+    name: "Tapete Caçamba Toro",
+    fullPrice: "R$ 130,00",
+    price: calculateDiscount("R$ 130,00"),
+    description:
+      "Tapetes sob medida para a caçamba do Toro, desenvolvidos com materiais resistentes e design funcional. Garantem máxima proteção contra impactos e sujeira, alinhando durabilidade, segurança e estilo ao seu veículo.",
+    images: ["/toro/toro.png", "/toro/toro.png"],
   },
 };
 
@@ -156,6 +194,10 @@ function ProdutosContent() {
       window.removeEventListener("touchmove", handleTouchMove);
     });
   };
+  const discountPercentage = calculateDiscountPercentage(
+    product.fullPrice,
+    product.price
+  );
 
   return (
     <div className="flex flex-col items-center">
@@ -200,11 +242,19 @@ function ProdutosContent() {
         </div>
 
         {/* Seção de Informações */}
-        <div className="w-full lg:w-1/2 flex flex-col justify-start mt-6 lg:mt-0">
+        <div className="w-full lg:w-1/2 flex flex-col justify-start mt-6 gap-1 lg:mt-0">
           <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
-          <p className="text-green-600 text-4xl font-bold mt-2">
-            {product.price}
-          </p>
+          <h1 className="text-2xl font-bold text-gray-400 line-through">
+            {product.fullPrice}
+          </h1>
+          <div className="flex gap-3">
+            <p className="text-gray-700 text-4xl font-bold -mt-1">
+              {product.price}
+            </p>
+            {discountPercentage === 30 && (
+              <p className="text-3xl font-bold text-lime-500">30% OFF</p>
+            )}
+          </div>
 
           <button
             onClick={() => {
@@ -226,7 +276,6 @@ function ProdutosContent() {
           >
             Comprar Agora
           </button>
-
           <div className="mt-6 p-4 h-52 bg-gray-100 rounded-lg shadow-md">
             <h2 className="text-xl font-semibold text-gray-800 mb-2">
               Descrição do Produto
