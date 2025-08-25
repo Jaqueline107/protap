@@ -4,145 +4,64 @@ import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Banner from "../Components/banner";
+import { useCart } from "../context/CartContext";
+import { db } from "../../db/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 type Product = {
   name: string;
   price: string;
-  fullPrice: string; // O preço cheio será sempre obrigatório para calcular o desconto
+  fullPrice: string;
   description: string;
   images: string[];
 };
 
-// Função para calcular desconto
-const calculateDiscount = (fullPrice: string): string => {
-  const numericPrice = parseFloat(
-    fullPrice.replace("R$", "").replace(",", ".")
-  );
-  const discountedPrice = (numericPrice * 0.7).toFixed(2); // Aplica 30% de desconto
-  return `R$${discountedPrice.replace(".", ",")}`; // Formata como string no padrão brasileiro
-};
-
-const calculateDiscountPercentage = (
-  fullPrice: string,
-  price: string
-): number => {
-  const numericFullPrice = parseFloat(
-    fullPrice.replace("R$", "").replace(",", ".")
-  );
+const calculateDiscountPercentage = (fullPrice: string, price: string): number => {
+  const numericFullPrice = parseFloat(fullPrice.replace("R$", "").replace(",", "."));
   const numericPrice = parseFloat(price.replace("R$", "").replace(",", "."));
-  const discountPercentage =
-    ((numericFullPrice - numericPrice) / numericFullPrice) * 100;
-  return Math.round(discountPercentage); // Retorna o valor arredondado
-};
-
-// Dados dos produtos com desconto aplicado
-const productsData: Record<string, Product> = {
-  Opala: {
-    name: "Tapete Opala",
-    fullPrice: "R$50,00",
-    price: calculateDiscount("R$50,00"), // Preço com desconto
-    description:
-      "Tapetes projetados para proteger o assoalho do seu carro, Feito com materiais resistentes e design funcional.",
-    images: [
-      "/opala/opala.png",
-      "/opala/opala1.png",
-      "/opala/opala2.png",
-      "/opala/opala3.png",
-      "/opala/beneficio.png",
-      "/opala/beneficio1.png",
-      "/opala/beneficio2.png",
-      "/opala/beneficio3.png",
-    ],
-  },
-  UnoStreet: {
-    name: "Tapete Uno Street",
-    fullPrice: "R$50,00",
-    price: calculateDiscount("R$50,00"),
-    description:
-      "Tapetes projetados para proteger o assoalho do seu carro, Feito com materiais resistentes e design funcional.",
-    images: [
-      "/unos/unostreet.png",
-      "/unos/unostreet1.png",
-      "/unos/unostreet2.png",
-    ],
-  },
-  KombiMala: {
-    name: "Tapete Kombi Mala",
-    fullPrice: "R$110,00",
-    price: calculateDiscount("R$110,00"),
-    description:
-      "Tapetes projetados para o espaço de bagagem da Kombi. Feito com materiais resistentes e design funcional, ideal para transporte seguro.",
-    images: ["/kombi/kombimala.png", "/kombi/kombimala1.png"],
-  },
-  Hb20s: {
-    name: "Tapete HB20s Street",
-    fullPrice: "R$50,00",
-    price: calculateDiscount("R$50,00"),
-    description:
-      "Tapetes projetados para o espaço de bagagem da Kombi. Feito com materiais resistentes e design funcional, ideal para transporte seguro.",
-    images: ["/hb20/hb20.png", "/hb20/hb201.png"],
-  },
-  Tcross: {
-    name: "Tapete Tcross",
-    fullPrice: "R$115,00",
-    price: calculateDiscount("R$120,00"),
-    description:
-      "Tapetes exclusivos para o T-Cross, com bordado elegante e base pinada para maior aderência. Oferecem proteção, estilo e segurança ao interior do veículo.",
-    images: ["/Tcross.png", "/Tcross.png"],
-  },
-  Polo: {
-    name: "Tapete Polo",
-    fullPrice: "R$115,00",
-    price: calculateDiscount("R$115,00"),
-    description:
-      "Tapetes sob medida para o Polo, combinando bordado exclusivo e base pinada para maior aderência. Proporcionam elegância, proteção e segurança ao interior do veículo.",
-    images: ["/polo/polo.png", "/beneficio/polo.png"],
-  },
-  Hilux: {
-    name: "Tapete Caçamba Hilux",
-    fullPrice: "R$ 140,00",
-    price: calculateDiscount("R$ 140,00"),
-    description:
-      "Tapetes sob medida para a Hilux, desenvolvidos com bordado exclusivo e base pinada para garantir aderência e segurança. Proporcionam estilo, proteção e durabilidade ao interior do veículo, alinhando conforto e sofisticação.",
-    images: ["/hilux/hiluxfrente.png", "/hilux/hilux.png"],
-  },
-  Toro: {
-    name: "Tapete Caçamba Toro",
-    fullPrice: "R$ 130,00",
-    price: calculateDiscount("R$ 130,00"),
-    description:
-      "Tapetes sob medida para a caçamba do Toro, desenvolvidos com materiais resistentes e design funcional. Garantem máxima proteção contra impactos e sujeira, alinhando durabilidade, segurança e estilo ao seu veículo.",
-    images: ["/toro/toro.png", "/toro/toro.png"],
-  },
+  const discountPercentage = ((numericFullPrice - numericPrice) / numericFullPrice) * 100;
+  return Math.round(discountPercentage);
 };
 
 function ProdutosContent() {
   const searchParams = useSearchParams();
   const produto = searchParams.get("produto");
 
-  const product = productsData[produto as string];
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [mainImage, setMainImage] = useState("");
+  const { addToCart } = useCart();
 
-  if (!product) {
-    return <p>Produto não encontrado!</p>;
-  }
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const [mainImage, setMainImage] = useState(product.images[0]);
-
-  // Função para mudar a imagem ao pressionar as setas do teclado
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
+    if (!produto) return;
+
+    const fetchProduct = async () => {
+      const docRef = doc(db, "produtos", produto);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data() as Product;
+        setProduct(data);
+        setMainImage(data.images[0]);
+      } else {
+        setProduct(null);
+      }
+      setLoading(false);
+    };
+
+    fetchProduct();
+  }, [produto]);
+
+  useEffect(() => {
+    if (!product) return;
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "ArrowLeft") {
-        // Mudar para a imagem anterior
         setMainImage((prev) => {
           const currentIndex = product.images.indexOf(prev);
-          return product.images[
-            (currentIndex - 1 + product.images.length) % product.images.length
-          ];
+          return product.images[(currentIndex - 1 + product.images.length) % product.images.length];
         });
       } else if (event.key === "ArrowRight") {
-        // Mudar para a próxima imagem
         setMainImage((prev) => {
           const currentIndex = product.images.indexOf(prev);
           return product.images[(currentIndex + 1) % product.images.length];
@@ -150,54 +69,39 @@ function ProdutosContent() {
       }
     };
 
-    // Adicionar evento de teclado
     window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [product]);
 
-    // Limpar evento de teclado quando o componente for desmontado
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [product.images]);
-
-  // Função para mudar a imagem ao deslizar no celular
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (!product) return;
     const touchStart = e.touches[0].clientX;
 
-    // Função para capturar o movimento do toque
     const handleTouchMove = (e: TouchEvent) => {
-      // Corrigido o tipo aqui
       const touchEnd = e.touches[0].clientX;
-
-      // Verificar direção do toque
       if (touchStart - touchEnd > 100) {
-        // Deslizou para a esquerda (trocar para próxima imagem)
         setMainImage((prev) => {
           const currentIndex = product.images.indexOf(prev);
           return product.images[(currentIndex + 1) % product.images.length];
         });
       } else if (touchEnd - touchStart > 100) {
-        // Deslizou para a direita (trocar para imagem anterior)
         setMainImage((prev) => {
           const currentIndex = product.images.indexOf(prev);
-          return product.images[
-            (currentIndex - 1 + product.images.length) % product.images.length
-          ];
+          return product.images[(currentIndex - 1 + product.images.length) % product.images.length];
         });
       }
     };
 
-    // Adicionar o evento de touchmove
     window.addEventListener("touchmove", handleTouchMove);
-
-    // Remover o evento touchmove após o toque ser finalizado
     window.addEventListener("touchend", () => {
       window.removeEventListener("touchmove", handleTouchMove);
     });
   };
-  const discountPercentage = calculateDiscountPercentage(
-    product.fullPrice,
-    product.price
-  );
+
+  if (loading) return <p>Carregando...</p>;
+  if (!product) return <p>Produto não encontrado!</p>;
+
+  const discountPercentage = calculateDiscountPercentage(product.fullPrice, product.price);
 
   return (
     <div className="flex flex-col items-center">
@@ -216,24 +120,16 @@ function ProdutosContent() {
             className="rounded-sm"
             onTouchStart={handleTouchStart}
           />
-
-          {/* Aqui removi a rolagem horizontal e adicionei uma classe para alinhamento das miniaturas */}
           <div className="flex h-32 gap-4 mt-8 justify-center">
             {product.images.map((src, index) => (
-              <button
-                key={index}
-                onClick={() => setMainImage(src)}
-                className="focus:outline-none"
-              >
+              <button key={index} onClick={() => setMainImage(src)} className="focus:outline-none">
                 <Image
                   src={src}
                   alt={`Miniatura ${index}`}
-                  width={110} // Tamanho maior para desktop
+                  width={110}
                   height={70}
                   className={`cursor-pointer rounded-md border transition-all ${
-                    mainImage === src
-                      ? "border-green-500 scale-105"
-                      : "border-gray-300"
+                    mainImage === src ? "border-green-500 scale-105" : "border-gray-300"
                   } hover:border-green-500`}
                 />
               </button>
@@ -244,45 +140,37 @@ function ProdutosContent() {
         {/* Seção de Informações */}
         <div className="w-full lg:w-1/2 flex flex-col justify-start mt-6 gap-1 lg:mt-0">
           <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
-          <h1 className="text-2xl font-bold text-gray-400 line-through">
-            {product.fullPrice}
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-400 line-through">{product.fullPrice}</h1>
           <div className="flex gap-3">
-            <p className="text-gray-700 text-4xl font-bold -mt-1">
-              {product.price}
-            </p>
-            {discountPercentage === 30 && (
-              <p className="text-3xl font-bold text-lime-500">30% OFF</p>
-            )}
+            <p className="text-gray-700 text-4xl font-bold -mt-1">{product.price}</p>
+            {discountPercentage === 30 && <p className="text-3xl font-bold text-lime-500">30% OFF</p>}
           </div>
 
-          <button
-            onClick={() => {
-              // Mensagem para o WhatsApp
-              const message = `Olá, gostaria de comprar o ${product.name} pelo preço de ${product.price}.`;
+          <div className="flex flex-col sm:flex-row gap-4 mt-6 w-full max-w-md">
+            <button
+              onClick={() => {
+                const message = `Olá, gostaria de comprar o ${product.name} pelo preço de ${product.price}.`;
+                const phoneNumber = "5511991861237";
+                const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+                window.open(whatsappUrl, "_blank");
+              }}
+              className="bg-green-600 text-white font-semibold text-md py-3 md:w-2/6 sm:w-6/6 px-6 rounded-lg hover:bg-green-700 shadow-md transition-all mt-4"
+            >
+              Comprar Agora
+            </button>
+            <button
+              onClick={() => {
+                addToCart({ ...product, quantity: 1 });
+              }}
+              className="bg-blue-600 text-white font-semibold text-md py-3 md:w-2/6 sm:w-6/6 px-6 rounded-lg hover:bg-blue-700 shadow-md transition-all mt-4"
+            >
+              Adicionar ao Carrinho
+            </button>
+          </div>
 
-              // Número de telefone do WhatsApp com DDD
-              const phoneNumber = "5511991861237";
-
-              // URL formatado para abrir no WhatsApp com a mensagem e número
-              const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
-                message
-              )}`;
-
-              // Abrir o link no WhatsApp (web ou mobile)
-              window.open(whatsappUrl, "_blank");
-            }}
-            className="bg-green-600 text-white font-semibold text-xl py-3 md:w-2/6 sm:w-6/6 px-6 rounded-lg hover:bg-green-700 shadow-md transition-all mt-4"
-          >
-            Comprar Agora
-          </button>
           <div className="mt-6 p-4 h-52 bg-gray-100 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">
-              Descrição do Produto
-            </h2>
-            <p className="text-gray-700 leading-relaxed">
-              {product.description}
-            </p>
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">Descrição do Produto</h2>
+            <p className="text-gray-700 leading-relaxed">{product.description}</p>
           </div>
         </div>
       </main>
