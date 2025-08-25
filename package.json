@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "seed": "tsx src/seedProducts.ts",
     "lint": "next lint",
     "db:studio": "npx drizzle-kit studio",
     "db:push": "npx drizzle-kit push:pg"
@@ -19,6 +20,8 @@
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.36.1",
     "embla-carousel-react": "^8.3.1",
+    "firebase": "^12.1.0",
+    "firebase-admin": "^13.4.0",
     "i18next": "^24.2.3",
     "install": "^0.13.0",
     "lucide-react": "^0.454.0",

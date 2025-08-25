@@ -1,122 +1,89 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { usePathname } from "next/navigation"; // Hook para verificar a rota atual
-import "../app/globals.css"; // Importação do Tailwind
+import React from "react";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ShoppingCart, ArrowLeft } from "lucide-react";
+import { CartProvider, useCart } from "./context/CartContext";
+import "../app/globals.css";
+
+// Botão Voltar que usa router.back()
+function BackButton() {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  if (pathname === "/") return null;
+
+  return (
+    <button
+      onClick={() => router.back()}
+      aria-label="Voltar para a página anterior"
+      className="menu-icon cursor-pointer"
+      style={{ border: "none", background: "transparent" }}
+    >
+      <ArrowLeft size={30} />
+    </button>
+  );
+}
+
+// Ícone de carrinho fixo no canto direito com quantidade
+function CartIcon() {
+  const { cart } = useCart();
+
+  const totalQuantity = cart.reduce((acc, item) => acc + item.quantity, 0);
+
+  return (
+    <Link
+      href="/Carrinho"
+      aria-label="Ver carrinho"
+      className="fixed right-6 top-6 z-50 bg-white shadow-lg rounded-full w-14 h-14 flex items-center justify-center cursor-pointer hover:shadow-2xl transition-shadow"
+      style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
+    >
+      <ShoppingCart size={28} color="#111" />
+
+      {totalQuantity > 0 && (
+        <span
+          className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-white font-semibold text-xs select-none"
+          style={{ backgroundColor: "#20e219ff",
+              boxShadow: "0 0 7px #c3ffa7ff", /* verde suave */ }}
+        >
+          
+          {totalQuantity}
+        </span>
+      )}
+    </Link>
+  );
+}
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // const [menuOpen, setMenuOpen] = useState(false);
-  const pathname = usePathname(); // Obtemos a rota atual
-
-  // const toggleMenu = useCallback(() => {
-  //   setMenuOpen((prev) => !prev);
-  // }, []);
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 768) {
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
-
   return (
-    <html>
-      <body>
-        <header className="flex justify-between items-center p-4 relative z-10">
-          <div className="flex items-center gap-4 px-6 py-4 lg:px-44 md:px-12">
-            {/* ProTap visível em telas médias e grandes, oculto em telas pequenas */}
-            <Link href={"/"}>
-              <p className="hidden md:block text-black hover:text-red-500 text-3xl font-bold">
-                ProTap
-              </p>
-            </Link>
-
-            {/* ArrowLeft aparece em páginas diferentes da inicial */}
-            {pathname !== "/" && (
+    <html lang="pt-BR">
+      <body className="bg-gray-50">
+        <CartProvider>
+          <header className="flex justify-between items-center p-4 relative z-10 bg-white shadow-sm">
+            <div className="flex items-center gap-4 px-6 py-4 lg:px-44 md:px-12 w-full">
               <Link href={"/"}>
-                <ArrowLeft className="menu-icon cursor-pointer" size={30} />
+                <p className="hidden md:block text-black hover:text-red-600 text-3xl font-bold cursor-pointer transition-colors">
+                  ProTap
+                </p>
               </Link>
-            )}
 
-            {/* Navegação horizontal para telas grandes */}
-            <nav className="md:flex md:gap-14">
-              <ul className="flex gap-14 ml-5 items-baseline">
-                {pathname !== "/" && ( // Condição para ocultar o link na página inicial
-                  <li>
-                    <Link
-                      href="/"
-                      className="text-gray-400 text-2xl hover:text-red-500 transition duration-200"
-                    >
-                      Voltar para Galeria
-                    </Link>
-                  </li>
-                )}
-              </ul>
-            </nav>
-          </div>
+              <BackButton />
 
-          {/* Sidebar para telas menores */}
-          {/* <nav
-            className={`fixed top-0 left-0 h-full bg-gray-100 z-50 transform ${
-              menuOpen ? "translate-x-0" : "-translate-x-full"
-            } transition-transform duration-300 ease-in-out w-[250px] md:hidden`}
-          > */}
-          {/* <FiX
-              className="absolute top-5 right-5 cursor-pointer"
-              onClick={toggleMenu}
-              size={30}
-            />
+              <nav className="md:flex md:gap-14 ml-auto">
+                {/* Se quiser adicionar mais links, coloque aqui */}
+              </nav>
+            </div>
+          </header>
 
-            <ul className="mt-10 flex flex-col gap-8 text-left pl-6">
-              <li onClick={() => setMenuOpen(false)}>
-                <Link
-                  href="/"
-                  className="text-gray-600 text-xl hover:text-red-500 transition duration-200"
-                >
-                  Home
-                </Link>
-              </li>
-              <li onClick={() => setMenuOpen(false)}>
-                <a
-                  href="/About"
-                  className="text-gray-600 text-xl hover:text-red-500 transition duration-200"
-                >
-                  Sobre
-                </a>
-              </li>
-              <li onClick={() => setMenuOpen(false)}>
-                <a
-                  href="/Product"
-                  className="text-gray-600 text-xl hover:text-red-500 transition duration-200"
-                >
-                  Produtos
-                </a>
-              </li>
-              <li onClick={() => setMenuOpen(false)}>
-                <a
-                  href="/Contact"
-                  className="text-gray-600 text-xl hover:text-red-500 transition duration-200"
-                >
-                  Contato
-                </a>
-              </li>
-            </ul>
-          </nav> */}
-        </header>
+          <CartIcon />
 
-        {/* Conteúdo principal */}
-        <main className="relative z-0">{children}</main>
+          <main className="relative z-0">{children}</main>
+        </CartProvider>
       </body>
     </html>
   );

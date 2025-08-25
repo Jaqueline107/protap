@@ -29,7 +29,7 @@ const calculateDiscountPercentage = (
   return Math.round(discountPercentage); // Retorna valor arredondado
 };
 
-// Array de produtos com preços cheios e descontos aplicados dinamicamente
+// Array de produtos
 const products = [
   {
     id: 1,
@@ -130,16 +130,16 @@ const products = [
 ];
 
 export default function Home() {
-  const [showModal, setShowModal] = useState(false); // Estado do modal
-  const [selectedProduct, setSelectedProduct] = useState<string | null>(null); // Produto selecionado
+  const [showModal, setShowModal] = useState(false); 
+  const [selectedProduct, setSelectedProduct] = useState<string | null>(null); 
 
   const handleViewBenefits = () => {
-    setShowModal(true); // Exibe o modal
+    setShowModal(true);
   };
 
   const handleProductSelection = (product: string) => {
-    setSelectedProduct(product); // Define o produto selecionado
-    setShowModal(false); // Fecha o modal
+    setSelectedProduct(product);
+    setShowModal(false);
   };
 
   return (
@@ -184,7 +184,8 @@ export default function Home() {
           {products.map((product) => (
             <div
               key={product.id}
-              className="w-full md:w-80 p-5 h-auto bg-white rounded-lg"
+              className="w-full md:w-80 p-5 h-auto bg-white rounded-lg border border-transparent 
+                         hover:border-green-600 hover:shadow-xl transition-all duration-300 cursor-pointer"
             >
               <Link href={product.href}>
                 <button className="rounded-md p-3 text-black font-semibold text-left w-full h-full">
@@ -214,8 +215,8 @@ export default function Home() {
       {/* Modal */}
       <Modal
         isVisible={showModal}
-        onClose={() => setShowModal(false)} // Fecha o modal
-        onSelect={handleProductSelection} // Seleciona o produto
+        onClose={() => setShowModal(false)}
+        onSelect={handleProductSelection}
       />
 
       {/* Redirecionamento */}
