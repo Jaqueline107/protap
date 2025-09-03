@@ -40,7 +40,7 @@ export default function CarrinhoPage() {
   const { cart, removeFromCart, clearCart, updateQuantity } = useCart();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
 
-  const user = auth.currentUser;
+  // const user = auth.currentUser;
 
   const calcularTotal = () =>
     cart
