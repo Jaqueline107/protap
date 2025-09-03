@@ -4,17 +4,29 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-08-27.basil",
 });
 
+// Tipagem do item do carrinho
+interface CartItem {
+  name: string;
+  price: string; // Ex: "R$50,00"
+  images: string[];
+  quantity: number;
+}
+
+interface CheckoutRequestBody {
+  items: CartItem[];
+}
+
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const body: CheckoutRequestBody = await req.json();
     const { items } = body;
 
-    const lineItems = items.map((item: any) => ({
+    const lineItems = items.map((item) => ({
       price_data: {
         currency: "brl",
         product_data: {
           name: item.name,
-          images: item.images.map((img: string) =>
+          images: item.images.map((img) =>
             img.startsWith("http") ? img : `${process.env.NEXT_PUBLIC_URL}${img}`
           ),
         },
