@@ -24,21 +24,21 @@ const productsData: Record<string, Product> = {
     name: 'Tapete Opala',
     fullPrice: 'R$50,00',
     price: calculateDiscount('R$50,00'),
-    description: 'Tapetes projetados para proteger o assoalho do seu carro, Feito com materiais resistentes e design funcional.',
-    images: ['/opala/opala.png', '/opala/opala1.png', '/opala/opala2.png', '/opala/opala3.png', '/opala/beneficio.png', '/opala/beneficio1.png', '/opala/beneficio2.png', '/opala/beneficio3.png'],
+    description: 'Tapetes projetados para proteger o assoalho do seu carro, feito com materiais resistentes e design funcional.',
+    images: ['/opala/opala.png', '/opala/opala1.png'],
   },
   UnoStreet: {
     name: 'Tapete Uno Street',
     fullPrice: 'R$50,00',
     price: calculateDiscount('R$50,00'),
-    description: 'Tapetes projetados para proteger o assoalho do seu carro, Feito com materiais resistentes e design funcional.',
-    images: ['/unos/unostreet.png', '/unos/unostreet1.png', '/unos/unostreet2.png'],
+    description: 'Tapetes projetados para proteger o assoalho do seu carro, feito com materiais resistentes e design funcional.',
+    images: ['/unos/unostreet.png', '/unos/unostreet1.png'],
   },
   KombiMala: {
     name: 'Tapete Kombi Mala',
     fullPrice: 'R$110,00',
     price: calculateDiscount('R$110,00'),
-    description: 'Tapetes projetados para o espaço de bagagem da Kombi. Feito com materiais resistentes e design funcional.',
+    description: 'Tapetes projetados para o espaço de bagagem da Kombi, feito com materiais resistentes e design funcional.',
     images: ['/kombi/kombimala.png', '/kombi/kombimala1.png'],
   },
   Hb20s: {
@@ -53,7 +53,7 @@ const productsData: Record<string, Product> = {
     fullPrice: 'R$120,00',
     price: calculateDiscount('R$120,00'),
     description: 'Tapetes exclusivos para o T-Cross, com bordado elegante e base pinada.',
-    images: ['/Tcross.png', '/Tcross.png'],
+    images: ['/Tcross.png'],
   },
   Polo: {
     name: 'Tapete Polo',
@@ -74,7 +74,7 @@ const productsData: Record<string, Product> = {
     fullPrice: 'R$130,00',
     price: calculateDiscount('R$130,00'),
     description: 'Tapetes sob medida para a caçamba do Toro, com materiais resistentes.',
-    images: ['/toro/toro.png', '/toro/toro.png'],
+    images: ['/toro/toro.png'],
   },
 };
 
@@ -102,12 +102,12 @@ export default function CarrinhoPage() {
           Não se preocupe, explore nossos produtos e encontre o que você ama!
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 w-full max-w-5xl">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-5xl px-4">
           {sugestoes.map((produto, idx) => (
             <Link
               key={idx}
               href={`/Produtos?produto=${encodeURIComponent(produto.name.replace('Tapete ', '').replace(/\s/g, ''))}`}
-              className="block bg-white rounded-lg shadow-md hover:shadow-lg transition p-4"
+              className="block bg-white rounded-lg shadow-md hover:shadow-lg transition p-4 flex flex-col items-center"
             >
               <Image
                 src={produto.images[0]}
@@ -133,7 +133,7 @@ export default function CarrinhoPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-12">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
       <h1 className="text-3xl font-bold text-gray-800 mb-8">Seu Carrinho</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -146,7 +146,7 @@ export default function CarrinhoPage() {
             return (
               <div
                 key={index}
-                className="flex flex-col md:flex-row items-center gap-6 p-4 bg-white rounded-lg shadow-sm border"
+                className="flex flex-col sm:flex-row items-center gap-6 p-4 bg-white rounded-lg shadow-sm border"
               >
                 <Image
                   src={product.images[0]}
@@ -160,8 +160,7 @@ export default function CarrinhoPage() {
                   <p className="line-through text-gray-500">{product.fullPrice}</p>
                   <p className="text-green-600 font-bold text-lg">{product.price}</p>
 
-                  {/* Seção de quantidade com botões */}
-                  <div className="mt-3 flex items-center gap-3">
+                  <div className="mt-3 flex items-center gap-3 flex-wrap">
                     <span className="text-sm font-medium text-gray-600">Quantidade:</span>
                     <div className="flex items-center border rounded overflow-hidden">
                       <button
