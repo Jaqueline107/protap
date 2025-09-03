@@ -22,10 +22,15 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       if (registerMode) await registerWithEmail(email, password);
       else await loginWithEmail(email, password);
       onClose();
-    } catch (err: any) {
-      alert(err.message);
-    }
-  };
+    } catch (err: unknown) {
+  if (err instanceof Error) {
+    alert(err.message);
+  } else {
+    alert("Erro inesperado");
+  }
+  }
+}
+
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
