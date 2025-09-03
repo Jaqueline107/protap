@@ -30,7 +30,6 @@ yarn-debug.log*
 yarn-error.log*
 
 # env files (can opt-in for commiting if needed)
-.env*
 
 # vercel
 .vercel
@@ -38,3 +37,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+
+## firebase config file
+
+seu-service-account.json
+
+.env
