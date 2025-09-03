@@ -5,7 +5,7 @@ import { useCart } from '../context/CartContext';
 import Image from 'next/image';
 import Link from 'next/link';
 import LoginModal from '../Components/loginModal';
-import { auth } from '../../db/firebaseAuth';
+// import { auth } from '../../db/firebaseAuth';
 
 type Product = {
   name: string;
