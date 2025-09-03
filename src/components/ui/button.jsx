@@ -1,81 +1,90 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-var __rest = (this && this.__rest) || function (s, e) {
-    var t = {};
-    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-        t[p] = s[p];
-    if (s != null && typeof Object.getOwnPropertySymbols === "function")
-        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                t[p[i]] = s[p[i]];
-        }
-    return t;
+"use client";
+
+import React, { ReactNode } from "react";
+import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
+import { ArrowLeft, ShoppingCart } from "lucide-react";
+import { CartProvider, useCart } from "./context/CartContext";
+import "../app/globals.css";
+
+type RootLayoutProps = {
+  children: ReactNode;
 };
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.buttonVariants = exports.Button = void 0;
-const React = __importStar(require("react"));
-const react_slot_1 = require("@radix-ui/react-slot");
-const class_variance_authority_1 = require("class-variance-authority");
-const utils_1 = require("@/lib/utils");
-const buttonVariants = (0, class_variance_authority_1.cva)("inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 dark:ring-offset-gray-950 dark:focus-visible:ring-gray-300", {
-    variants: {
-        variant: {
-            default: "bg-gray-900 text-gray-50 hover:bg-gray-900/90 dark:bg-gray-50 dark:text-gray-900 dark:hover:bg-gray-50/90",
-            destructive: "bg-red-500 text-gray-50 hover:bg-red-500/90 dark:bg-red-900 dark:text-gray-50 dark:hover:bg-red-900/90",
-            outline: "border border-gray-200 bg-white hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-800 dark:hover:text-gray-50",
-            secondary: "bg-gray-100 text-gray-900 hover:bg-gray-100/80 dark:bg-gray-800 dark:text-gray-50 dark:hover:bg-gray-800/80",
-            ghost: "hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-50",
-            link: "text-gray-900 underline-offset-4 hover:underline dark:text-gray-50",
-        },
-        size: {
-            default: "h-10 px-4 py-2",
-            sm: "h-9 rounded-md px-3",
-            lg: "h-11 rounded-md px-8",
-            icon: "h-10 w-10",
-        },
-    },
-    defaultVariants: {
-        variant: "default",
-        size: "default",
-    },
-});
-exports.buttonVariants = buttonVariants;
-const Button = React.forwardRef((_a, ref) => {
-    var { className, variant, size, asChild = false } = _a, props = __rest(_a, ["className", "variant", "size", "asChild"]);
-    const Comp = asChild ? react_slot_1.Slot : "button";
-    return (<Comp className={(0, utils_1.cn)(buttonVariants({ variant, size, className }))} ref={ref} {...props}/>);
-});
-exports.Button = Button;
-Button.displayName = "Button";
+
+// Botão Voltar que usa router.back()
+function BackButton() {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  if (pathname === "/") return null;
+
+  return (
+    <button
+      onClick={() => router.back()}
+      aria-label="Voltar para a página anterior"
+      className="menu-icon cursor-pointer"
+      style={{ border: "none", background: "transparent" }}
+    >
+      <ArrowLeft size={30} />
+    </button>
+  );
+}
+
+// Ícone de carrinho fixo no canto direito com quantidade
+function CartIcon() {
+  const { cart } = useCart();
+  const totalQuantity = cart.reduce((acc, item) => acc + item.quantity, 0);
+
+  return (
+    <Link
+      href="/Carrinho"
+      aria-label="Ver carrinho"
+      className="fixed right-6 top-6 z-50 bg-white shadow-lg rounded-full w-14 h-14 flex items-center justify-center cursor-pointer hover:shadow-2xl transition-shadow"
+      style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
+    >
+      <ShoppingCart size={28} color="#111" />
+
+      {totalQuantity > 0 && (
+        <span
+          className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-white font-semibold text-xs select-none"
+          style={{
+            backgroundColor: "#20e219ff",
+            boxShadow: "0 0 7px #c3ffa7ff", // verde suave
+          }}
+        >
+          {totalQuantity}
+        </span>
+      )}
+    </Link>
+  );
+}
+
+export default function RootLayout({ children }: RootLayoutProps) {
+  return (
+    <html lang="pt-BR">
+      <body className="bg-gray-50">
+        <CartProvider>
+          <header className="flex justify-between items-center p-4 relative z-10 bg-white shadow-sm">
+            <div className="flex items-center gap-4 px-6 py-4 lg:px-44 md:px-12 w-full">
+              <Link href={"/"}>
+                <p className="hidden md:block text-black hover:text-red-600 text-3xl font-bold cursor-pointer transition-colors">
+                  ProTap
+                </p>
+              </Link>
+
+              <BackButton />
+
+              <nav className="md:flex md:gap-14 ml-auto">
+                {/* Se quiser adicionar mais links, coloque aqui */}
+              </nav>
+            </div>
+          </header>
+
+          <CartIcon />
+
+          <main className="relative z-0">{children}</main>
+        </CartProvider>
+      </body>
+    </html>
+  );
+}
