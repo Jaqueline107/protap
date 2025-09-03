@@ -42,3 +42,5 @@ next-env.d.ts
 ## firebase config file
 
 seu-service-account.json
+
+.env
