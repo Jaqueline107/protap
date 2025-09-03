@@ -44,7 +44,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
           className="w-full bg-white text-gray-800 border border-gray-300 py-2 rounded flex items-center justify-center gap-3 mb-4 hover:bg-gray-100 transition"
         >
           {/* Ícone Google moderno */}
-          <Image src="/google-icon.svg" alt="Google" className="w-6 h-6" />
+          <Image src="/google-icon.svg" alt="Google" height={20} width={20} className="w-6 h-6" />
           <span className="font-medium">Entrar com Google</span>
         </button>
 

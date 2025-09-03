@@ -68,10 +68,7 @@ export default function CarrinhoPage() {
 
   // Verifica login antes de pagar
   const handlePayClick = () => {
-    if (!user) {
-      setIsLoginOpen(true);
-      return;
-    }
+
     handleStripeCheckout();
   };
 
