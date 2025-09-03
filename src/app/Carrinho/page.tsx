@@ -1,9 +1,11 @@
 'use client';
 
+import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import Image from 'next/image';
 import Link from 'next/link';
-import React from 'react';
+import LoginModal from '../Components/loginModal';
+import { auth } from '../../db/firebaseAuth';
 
 type Product = {
   name: string;
@@ -36,6 +38,9 @@ const sugestoes = Object.values(productsData).slice(0, 4);
 
 export default function CarrinhoPage() {
   const { cart, removeFromCart, clearCart, updateQuantity } = useCart();
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+
+  const user = auth.currentUser;
 
   const calcularTotal = () =>
     cart
@@ -59,6 +64,15 @@ export default function CarrinhoPage() {
     } catch (err) {
       console.error('Erro ao criar sessão:', err);
     }
+  };
+
+  // Verifica login antes de pagar
+  const handlePayClick = () => {
+    if (!user) {
+      setIsLoginOpen(true);
+      return;
+    }
+    handleStripeCheckout();
   };
 
   // Carrinho vazio
@@ -141,26 +155,38 @@ export default function CarrinhoPage() {
             <span className="text-gray-800 font-bold">R$ {calcularTotal().replace('.', ',')}</span>
           </div>
 
-          <button onClick={handleStripeCheckout} className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-md text-lg font-semibold transition">
-            Finalizar Compra via Cartão
+          {/* Botão de pagamento */}
+          <button
+            onClick={handlePayClick}
+            className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-md text-lg font-semibold transition shadow-md"
+          >
+            Pagar
           </button>
 
+          {/* Botão de tirar dúvida via WhatsApp */}
           <button
             onClick={() => {
-              const message = cart.map(item => `• ${item.name} x${item.quantity} - ${item.price}`).join('\n') + `\n\nTotal: R$ ${calcularTotal().replace('.', ',')}`;
-              const whatsappURL = `https://wa.me/5511991861237?text=${encodeURIComponent('Olá, quero finalizar a compra com os seguintes itens:\n\n'+message)}`;
-              window.open(whatsappURL, '_blank');
+              const message = encodeURIComponent("Olá! Gostaria de tirar uma dúvida sobre os produtos.");
+              const whatsappURL = `https://wa.me/5511991861237?text=${message}`;
+              window.open(whatsappURL, "_blank");
             }}
-            className="w-full bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-md text-lg font-semibold transition"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-md text-lg font-semibold transition shadow-md mt-2"
           >
-            Finalizar via WhatsApp
+            Tirar Dúvida
           </button>
 
-          <button onClick={clearCart} className="w-full bg-gray-300 hover:bg-gray-400 text-black py-3 px-4 rounded-md text-base transition mt-4">
+          {/* Limpar carrinho */}
+          <button
+            onClick={clearCart}
+            className="w-full bg-white shadow hover:bg-gray-50 text-black font-semibold py-3 px-4 rounded-md text-base transition mt-4"
+          >
             Limpar Carrinho
           </button>
         </div>
       </div>
+
+      {/* Modal de Login */}
+      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
     </div>
   );
 }

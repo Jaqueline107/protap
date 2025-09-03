@@ -30,7 +30,7 @@ export async function POST(req: Request) {
       mode: "payment",
       line_items: lineItems,
       success_url: `${process.env.NEXT_PUBLIC_URL}/success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_URL}/canceled`,
+      cancel_url: `${process.env.NEXT_PUBLIC_URL}/`,
     });
 
     return new Response(JSON.stringify({ url: session.url }), {

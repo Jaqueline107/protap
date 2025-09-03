@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ShoppingCart, ArrowLeft } from "lucide-react";
 import { CartProvider, useCart } from "./context/CartContext";
 import "../app/globals.css";
+import { AuthProvider } from "./context/AuthContext";
 
 // Botão Voltar que usa router.back()
 function BackButton() {
@@ -63,6 +64,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className="bg-gray-50">
+        <AuthProvider>
         <CartProvider>
           <header className="flex justify-between items-center p-4 relative z-10 bg-white shadow-sm">
             <div className="flex items-center gap-4 px-6 py-4 lg:px-44 md:px-12 w-full">
@@ -84,6 +86,7 @@ export default function RootLayout({
 
           <main className="relative z-0">{children}</main>
         </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );
