@@ -1,9 +1,16 @@
-import * as admin from "firebase-admin";
-import serviceAccount from "../seu-service-account.json" assert { type: "json" };
+"use client";
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
-});
+import * as admin from "firebase-admin";
+
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+    }),
+  });
+}
 
 const db = admin.firestore();
 
@@ -129,7 +136,6 @@ async function seedProducts() {
 
   for (const key in productsData) {
     const product = productsData[key];
-    // Usando doc(key).set() para evitar duplicação
     await collectionRef.doc(key).set(product);
     console.log(`Produto ${product.name} adicionado/atualizado.`);
   }
