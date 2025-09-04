@@ -105,7 +105,7 @@ function ProdutosContent() {
 
   return (
     <div className="flex flex-col items-center">
-      <Banner />
+      {/* <Banner /> */}
 
       <main className="w-5/6 mt-20 flex flex-col lg:flex-row gap-12">
         {/* Seção de Imagens */}
