@@ -58,7 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           <CartProvider>
             {/* Navbar moderna */}
-            <header className="fixed w-full top-0 left-0 z-30 flex justify-center bg-black/70 backdrop-blur-sm shadow-md">
+            <header className="fixed w-full top-0 left-0 z-30 flex justify-center bg-black backdrop-blur-sm shadow-md">
               <div className="flex items-center justify-between max-w-[1400px] w-full px-6 sm:px-12 lg:px-24 py-5">
                 {/* Logo */}
                 <Link href={"/"}>
@@ -69,6 +69,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
                 {/* Navegação */}
                 <nav className="hidden md:flex gap-12 items-center">
+                   <Link
+                    href="/Sobre"
+                    className="text-gray-200 hover:text-red-600 transition-colors font-medium"
+                  >
+                    Produtos
+                  </Link>
                   <Link
                     href="/Sobre"
                     className="text-gray-200 hover:text-red-600 transition-colors font-medium"

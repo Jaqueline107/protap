@@ -143,11 +143,11 @@ export default function Home() {
   };
 
   return (
-    <div className="-mt-8 flex flex-col items-center">
+    <div className="-mt-5 flex flex-col items-center">
       <Banner />
 
       {/* Conteúdo Principal */}
-      <main className="-mt-3 w-5/6">
+      <main className="w-5/6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Card de "Ver benefícios" */}
           <div className="-mt-2 w-full md:w-80 p-5 h-auto bg-white rounded-lg">

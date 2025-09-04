@@ -5,14 +5,14 @@ import Image from "next/image";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import logo from "../../../public/logo.png";
 import opala from "../../../public/opalaestrada.png";
+import estrada from "../../../public/Chevrolet.png"; // imagem da estrada
 
 export default function Banner() {
   const slides = [
-    { id: 1, type: "image", img: opala, title: "", subtitle: "" },
+    { id: 1, type: "image", img: opala },
     {
       id: 2,
       type: "text",
-      img: null,
       title: "ProTap",
       subtitle: "Tapetes de carros",
       description: "Qualidade, durabilidade e estilo para o seu veículo.",
@@ -24,13 +24,11 @@ export default function Banner() {
   const prevSlide = () => setIndex((prev) => (prev - 1 + slides.length) % slides.length);
   const nextSlide = () => setIndex((prev) => (prev + 1) % slides.length);
 
-  // Auto play
   useEffect(() => {
     const interval = setInterval(nextSlide, 10000);
     return () => clearInterval(interval);
   }, []);
 
-  // Navegação com teclado
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") prevSlide();
@@ -40,10 +38,10 @@ export default function Banner() {
     return () => window.removeEventListener("keydown", handleKey);
   }, []);
 
-  // Swipe para mobile
   let touchStartX = 0;
   let touchEndX = 0;
-  const handleTouchStart = (e: React.TouchEvent) => (touchStartX = e.changedTouches[0].screenX);
+  const handleTouchStart = (e: React.TouchEvent) =>
+    (touchStartX = e.changedTouches[0].screenX);
   const handleTouchEnd = (e: React.TouchEvent) => {
     touchEndX = e.changedTouches[0].screenX;
     if (touchEndX < touchStartX - 50) nextSlide();
@@ -52,37 +50,48 @@ export default function Banner() {
 
   return (
     <div
-      className="w-full -mt-24 5mx-auto relative overflow-hidden"
+      className="-mt-24 w-full relative overflow-hidden"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
       {slides.map(
         (slide, i) =>
           i === index && (
-            <div
-              key={slide.id}
-              className="w-full shadow-md mb-6 relative"
-              style={{ minHeight: "400px" }} // altura do banner
-            >
+            <div key={slide.id} className="w-full relative">
+
+              {/* Slide de imagem */}
               {slide.type === "image" && (
-                <div className="relative w-full h-80s sm:h-[450px] md:h-[640px] overflow-hidden">
-                  <Image
-                    src={slide.img}
-                    alt="Opala na Estrada"
-                    fill
-                    className="object-cover w-full h-full rounded-sm"
-                  />
-                  <div className="absolute w-full h-full bg-black/20 rounded-sm" />
-                </div>
+                <>
+                  {/* Pequenas e médias (estrada) */}
+                  <div className="flex lg:hidden relative w-full h-[400px] sm:h-[500px] md:h-[550px] justify-center items-center overflow-hidden">
+                    <Image
+                      src={estrada}
+                      alt="Estrada"
+                      className="object-contain w-full h-auto"
+                      priority
+                    />
+                  </div>
+
+                  {/* Grandes (Opala) */}
+                  <div className="hidden lg:flex relative w-full h-[900px] justify-center items-center overflow-hidden">
+                    <Image
+                      src={opala}
+                      alt="Opala na Estrada"
+                      className="object-contain w-full h-auto"
+                      priority
+                    />
+                  </div>
+                </>
               )}
 
+              {/* Slide de texto */}
               {slide.type === "text" && (
                 <div
                   className="relative flex flex-col sm:flex-row items-center justify-center sm:justify-between
-                  bg-gradient-to-r from-black via-gray-900 to-black p-6 sm:p-8 h-80 sm:h-[450px] md:h-[500px] rounded-sm"
+                  bg-black p-6 sm:p-8 h-auto sm:h-[450px] md:h-[500px]"
                 >
-                  {/* Texto oculto no celular */}
-                  <div className="z-10 sm:w-1/2 text-center sm:text-left px-6 sm:px-8 hidden sm:block">
+                  {/* Texto apenas desktop */}
+                  <div className="z-10 sm:w-1/2 text-center sm:text-left px-6 sm:px-8 hidden sm:flex flex-col">
                     <h1 className="text-4xl sm:text-6xl font-extrabold text-white drop-shadow-lg">
                       {slide.title}
                     </h1>
@@ -92,7 +101,7 @@ export default function Banner() {
                     <p className="mt-4 text-gray-400 text-lg sm:text-xl">{slide.description}</p>
                   </div>
 
-                  {/* Logo centralizado no celular */}
+                  {/* Logo centralizado */}
                   <div className="z-10 flex justify-center items-center w-full sm:w-1/2 mt-4 sm:mt-0">
                     <Image
                       src={logo}
@@ -105,7 +114,7 @@ export default function Banner() {
                 </div>
               )}
 
-              {/* Setas de navegação escondidas no celular */}
+              {/* Setas de navegação */}
               <button
                 onClick={prevSlide}
                 className="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-3 rounded-full z-20"
@@ -118,6 +127,7 @@ export default function Banner() {
               >
                 <FaChevronRight size={20} />
               </button>
+
             </div>
           )
       )}
