@@ -8,47 +8,42 @@ import { CartProvider, useCart } from "./context/CartContext";
 import "../app/globals.css";
 import { AuthProvider } from "./context/AuthContext";
 
-// Botão Voltar que usa router.back()
+// Botão Voltar
 function BackButton() {
   const router = useRouter();
   const pathname = usePathname();
-
   if (pathname === "/") return null;
-
   return (
     <button
       onClick={() => router.back()}
-      aria-label="Voltar para a página anterior"
-      className="menu-icon cursor-pointer"
-      style={{ border: "none", background: "transparent" }}
+      aria-label="Voltar"
+      className="menu-icon cursor-pointer p-2 rounded-md hover:bg-black/15 transition"
     >
-      <ArrowLeft size={30} />
+      <ArrowLeft color="white" size={26} />
     </button>
   );
 }
 
-// Ícone de carrinho fixo no canto direito com quantidade
+// Carrinho centralizado na navbar
 function CartIcon() {
   const { cart } = useCart();
-
   const totalQuantity = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
     <Link
       href="/Carrinho"
       aria-label="Ver carrinho"
-      className="fixed right-6 top-6 z-50 bg-white shadow-lg rounded-full w-14 h-14 flex items-center justify-center cursor-pointer hover:shadow-2xl transition-shadow"
-      style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
+      className="relative flex items-center justify-center hover:bg-lime-50 w-14 h-14 bg-white rounded-full shadow-md hover:shadow-xl transition cursor-pointer"
     >
       <ShoppingCart size={28} color="#111" />
-
       {totalQuantity > 0 && (
         <span
-          className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-white font-semibold text-xs select-none"
-          style={{ backgroundColor: "#20e219ff",
-              boxShadow: "0 0 7px #c3ffa7ff", /* verde suave */ }}
+          className="absolute -top-1 -right-1 w-6 h-6 flex items-center justify-center text-xs font-semibold text-white rounded-full"
+          style={{
+            backgroundColor: "#ff3b3b",
+            boxShadow: "0 0 6px #ff7f7f",
+          }}
         >
-          
           {totalQuantity}
         </span>
       )}
@@ -56,36 +51,48 @@ function CartIcon() {
   );
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
       <body className="bg-gray-50">
         <AuthProvider>
-        <CartProvider>
-          <header className="flex justify-between items-center p-4 relative z-10 bg-white shadow-sm">
-            <div className="flex items-center gap-4 px-6 py-4 lg:px-44 md:px-12 w-full">
-              <Link href={"/"}>
-                <p className="hidden md:block text-black hover:text-red-600 text-3xl font-bold cursor-pointer transition-colors">
-                  ProTap
-                </p>
-              </Link>
+          <CartProvider>
+            {/* Navbar moderna */}
+            <header className="fixed w-full top-0 left-0 z-30 flex justify-center bg-black/70 backdrop-blur-sm shadow-md">
+              <div className="flex items-center justify-between max-w-[1400px] w-full px-6 sm:px-12 lg:px-24 py-5">
+                {/* Logo */}
+                <Link href={"/"}>
+                  <p className="text-white text-3xl font-bold cursor-pointer hover:text-red-600 transition-colors">
+                    ProTap
+                  </p>
+                </Link>
 
-              <BackButton />
+                {/* Navegação */}
+                <nav className="hidden md:flex gap-12 items-center">
+                  <Link
+                    href="/Sobre"
+                    className="text-gray-200 hover:text-red-600 transition-colors font-medium"
+                  >
+                    Sobre
+                  </Link>
+                  <Link
+                    href="/Contato"
+                    className="text-gray-200 hover:text-red-600 transition-colors font-medium"
+                  >
+                    Contato
+                  </Link>
+                </nav>
 
-              <nav className="md:flex md:gap-14 ml-auto">
-                {/* Se quiser adicionar mais links, coloque aqui */}
-              </nav>
-            </div>
-          </header>
+                {/* Botão Voltar + Carrinho */}
+                <div className="flex items-center gap-4">
+                  <BackButton />
+                  <CartIcon />
+                </div>
+              </div>
+            </header>
 
-          <CartIcon />
-
-          <main className="relative z-0">{children}</main>
-        </CartProvider>
+            <main className="pt-24 relative z-0">{children}</main>
+          </CartProvider>
         </AuthProvider>
       </body>
     </html>
