@@ -50,7 +50,7 @@ export default function Banner() {
 
   return (
     <div
-      className="-mt-24 w-full relative overflow-hidden"
+      className="-mt-36 w-full relative overflow-hidden"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
