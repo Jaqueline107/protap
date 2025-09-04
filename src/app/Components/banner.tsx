@@ -57,7 +57,7 @@ export default function Banner() {
       {slides.map(
         (slide, i) =>
           i === index && (
-            <div key={slide.id} className="w-full relative">
+            <div key={slide.id} className="-mt-96px w-full relative">
 
               {/* Slide de imagem */}
               {slide.type === "image" && (
@@ -73,7 +73,7 @@ export default function Banner() {
                   </div>
 
                   {/* Grandes (Opala) */}
-                  <div className="hidden lg:flex relative w-full h-[900px] justify-center items-center overflow-hidden">
+                  <div className="hidden lg:flex relative w-full h-[850px] justify-center items-center overflow-hidden">
                     <Image
                       src={opala}
                       alt="Opala na Estrada"
@@ -87,7 +87,7 @@ export default function Banner() {
               {/* Slide de texto */}
               {slide.type === "text" && (
                 <div
-                  className="relative flex flex-col sm:flex-row items-center justify-center sm:justify-between
+                  className="mt-12 relative flex flex-col sm:flex-row items-center justify-center sm:justify-between
                   bg-black p-6 sm:p-8 h-auto sm:h-[450px] md:h-[500px]"
                 >
                   {/* Texto apenas desktop */}
