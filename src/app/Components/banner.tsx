@@ -50,20 +50,20 @@ export default function Banner() {
 
   return (
     <div
-      className="-mt-36 w-full relative overflow-hidden"
+      className="md:-mt-36 w-full relative overflow-hidden"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
       {slides.map(
         (slide, i) =>
           i === index && (
-            <div key={slide.id} className="-mt-96px w-full relative">
+            <div key={slide.id} className=" w-full relative">
 
               {/* Slide de imagem */}
               {slide.type === "image" && (
                 <>
                   {/* Pequenas e médias (estrada) */}
-                  <div className="flex lg:hidden relative w-full h-[400px] sm:h-[500px] md:h-[550px] justify-center items-center overflow-hidden">
+                  <div className="-mt-10 flex lg:hidden relative w-full h-[400px] sm:h-[500px] md:h-[550px] justify-center items-center overflow-hidden">
                     <Image
                       src={estrada}
                       alt="Estrada"
@@ -73,7 +73,7 @@ export default function Banner() {
                   </div>
 
                   {/* Grandes (Opala) */}
-                  <div className="hidden lg:flex relative w-full h-[850px] justify-center items-center overflow-hidden">
+                  <div className="hidden lg:flex relative w-full h-[750px] justify-center items-center overflow-hidden">
                     <Image
                       src={opala}
                       alt="Opala na Estrada"
@@ -87,8 +87,8 @@ export default function Banner() {
               {/* Slide de texto */}
               {slide.type === "text" && (
                 <div
-                  className="mt-12 relative flex flex-col sm:flex-row items-center justify-center sm:justify-between
-                  bg-black p-6 sm:p-8 h-auto sm:h-[450px] md:h-[500px]"
+                  className=" relative flex flex-col sm:flex-row items-center justify-center sm:justify-between
+                  bg-black p-6 sm:p-8 h-auto sm:mt-40 m:h-[450px] md:h-[500px]"
                 >
                   {/* Texto apenas desktop */}
                   <div className="z-10 sm:w-1/2 text-center sm:text-left px-6 sm:px-8 hidden sm:flex flex-col">
