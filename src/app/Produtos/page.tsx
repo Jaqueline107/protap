@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
@@ -18,8 +18,7 @@ type Product = {
 const calculateDiscountPercentage = (fullPrice: string, price: string): number => {
   const numericFullPrice = parseFloat(fullPrice.replace("R$", "").replace(",", "."));
   const numericPrice = parseFloat(price.replace("R$", "").replace(",", "."));
-  const discountPercentage = ((numericFullPrice - numericPrice) / numericFullPrice) * 100;
-  return Math.round(discountPercentage);
+  return Math.round(((numericFullPrice - numericPrice) / numericFullPrice) * 100);
 };
 
 function ProdutosContent() {
@@ -56,12 +55,12 @@ function ProdutosContent() {
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "ArrowLeft") {
-        setMainImage((prev) => {
+        setMainImage(prev => {
           const currentIndex = product.images.indexOf(prev);
           return product.images[(currentIndex - 1 + product.images.length) % product.images.length];
         });
       } else if (event.key === "ArrowRight") {
-        setMainImage((prev) => {
+        setMainImage(prev => {
           const currentIndex = product.images.indexOf(prev);
           return product.images[(currentIndex + 1) % product.images.length];
         });
@@ -79,12 +78,12 @@ function ProdutosContent() {
     const handleTouchMove = (e: TouchEvent) => {
       const touchEnd = e.touches[0].clientX;
       if (touchStart - touchEnd > 100) {
-        setMainImage((prev) => {
+        setMainImage(prev => {
           const currentIndex = product.images.indexOf(prev);
           return product.images[(currentIndex + 1) % product.images.length];
         });
       } else if (touchEnd - touchStart > 100) {
-        setMainImage((prev) => {
+        setMainImage(prev => {
           const currentIndex = product.images.indexOf(prev);
           return product.images[(currentIndex - 1 + product.images.length) % product.images.length];
         });
@@ -102,10 +101,25 @@ function ProdutosContent() {
 
   const discountPercentage = calculateDiscountPercentage(product.fullPrice, product.price);
 
+  const handleBuyNow = async () => {
+    if (!product) return;
+
+    try {
+      const res = await fetch("/api/checkout_sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: [{ ...product, quantity: 1 }] }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else console.error("Erro ao criar sessão", data.error);
+    } catch (err) {
+      console.error("Erro ao criar sessão:", err);
+    }
+  };
+
   return (
     <div className="flex flex-col items-center">
-      {/* <Banner /> */}
-
       <main className="w-5/6 mt-20 flex flex-col lg:flex-row gap-12">
         {/* Seção de Imagens */}
         <div className="flex flex-col items-center w-full lg:w-1/2">
@@ -147,21 +161,15 @@ function ProdutosContent() {
 
           <div className="flex flex-col sm:flex-row gap-4 mt-6 w-full max-w-md">
             <button
-              onClick={() => {
-                const message = `Olá, gostaria de comprar o ${product.name} pelo preço de ${product.price}.`;
-                const phoneNumber = "5511991861237";
-                const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-                window.open(whatsappUrl, "_blank");
-              }}
-              className="bg-green-600 text-white font-semibold text-md py-3 md:w-2/6 sm:w-6/6 px-6 rounded-lg hover:bg-green-700 shadow-md transition-all mt-4"
+              onClick={handleBuyNow}
+              className="bg-green-600 text-white font-semibold text-md md:w-2/6 sm:w-6/6 py-3 px-6 rounded-lg hover:bg-green-700 shadow-md transition-all mt-4"
             >
               Comprar Agora
             </button>
+
             <button
-              onClick={() => {
-                addToCart({ ...product, quantity: 1 });
-              }}
-              className="bg-blue-600 text-white font-semibold text-md py-3 md:w-2/6 sm:w-6/6 px-6 rounded-lg hover:bg-blue-700 shadow-md transition-all mt-4"
+              onClick={() => addToCart({ ...product, quantity: 1 })}
+              className="bg-blue-600 text-white font-semibold text-md md:w-2/6 sm:w-6/6 py-3 px-6 rounded-lg hover:bg-blue-700 shadow-md transition-all mt-4"
             >
               Adicionar ao Carrinho
             </button>
