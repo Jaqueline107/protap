@@ -3,7 +3,6 @@
 import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
-import Banner from "../Components/banner";
 import { useCart } from "../context/CartContext";
 import { db } from "../../db/firebase";
 import { doc, getDoc } from "firebase/firestore";
