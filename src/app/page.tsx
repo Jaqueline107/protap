@@ -143,14 +143,14 @@ export default function Home() {
   };
 
   return (
-    <div className="-mt-5 flex flex-col items-center">
+    <div className="flex flex-col items-center">
       <Banner />
 
       {/* Conteúdo Principal */}
       <main className="w-5/6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Card de "Ver benefícios" */}
-          <div className="-mt-2 w-full md:w-80 p-5 h-auto bg-white rounded-lg">
+          <div className="w-full md:w-80 p-5 h-auto bg-white rounded-lg">
             <p className="text-black font-semibold text-2xl mb-5">
               Tapetes de altissma qualidade, feitos especialmente para você.
             </p>
