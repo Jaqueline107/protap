@@ -5,7 +5,6 @@ import { useCart } from '../context/CartContext';
 import Image from 'next/image';
 import Link from 'next/link';
 import LoginModal from '../Components/loginModal';
-// import { auth } from '../../db/firebaseAuth';
 
 type Product = {
   name: string;
@@ -40,8 +39,6 @@ export default function CarrinhoPage() {
   const { cart, removeFromCart, clearCart, updateQuantity } = useCart();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
 
-  // const user = auth.currentUser;
-
   const calcularTotal = () =>
     cart
       .reduce((total, item) => {
@@ -51,6 +48,7 @@ export default function CarrinhoPage() {
       }, 0)
       .toFixed(2);
 
+  // Função de checkout Stripe
   const handleStripeCheckout = async () => {
     try {
       const res = await fetch('/api/checkout_sessions', {
@@ -59,20 +57,16 @@ export default function CarrinhoPage() {
         body: JSON.stringify({ items: cart }),
       });
       const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else console.error('Erro ao criar sessão', data.error);
+      if (data.url) {
+        window.location.href = data.url; // Redireciona para o Stripe
+      } else {
+        console.error('Erro ao criar sessão', data.error);
+      }
     } catch (err) {
       console.error('Erro ao criar sessão:', err);
     }
   };
 
-  // Verifica login antes de pagar
-  const handlePayClick = () => {
-
-    handleStripeCheckout();
-  };
-
-  // Carrinho vazio
   if (cart.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center text-center text-gray-600 space-y-6 py-20">
@@ -100,12 +94,10 @@ export default function CarrinhoPage() {
     );
   }
 
-  // Carrinho com produtos
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
       <h1 className="text-3xl font-bold text-gray-800 mb-8">Seu Carrinho</h1>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* Produtos */}
         <div className="lg:col-span-2 space-y-6">
           {cart.map((item, index) => {
             const product = Object.values(productsData).find(p => p.name === item.name);
@@ -144,7 +136,6 @@ export default function CarrinhoPage() {
           })}
         </div>
 
-        {/* Resumo da Compra */}
         <div className="bg-gray-100 p-6 rounded-lg shadow-md h-fit space-y-4">
           <h3 className="text-2xl font-semibold text-gray-800 mb-6">Resumo da Compra</h3>
           <div className="flex justify-between mb-4">
@@ -154,13 +145,12 @@ export default function CarrinhoPage() {
 
           {/* Botão de pagamento */}
           <button
-            onClick={handlePayClick}
+            onClick={handleStripeCheckout}
             className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-md text-lg font-semibold transition shadow-md"
           >
             Pagar
           </button>
 
-          {/* Botão de tirar dúvida via WhatsApp */}
           <button
             onClick={() => {
               const message = encodeURIComponent("Olá! Gostaria de tirar uma dúvida sobre os produtos.");
@@ -172,7 +162,6 @@ export default function CarrinhoPage() {
             Tirar Dúvida
           </button>
 
-          {/* Limpar carrinho */}
           <button
             onClick={clearCart}
             className="w-full bg-white shadow hover:bg-gray-50 text-black font-semibold py-3 px-4 rounded-md text-base transition mt-4"
@@ -182,7 +171,6 @@ export default function CarrinhoPage() {
         </div>
       </div>
 
-      {/* Modal de Login */}
       <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
     </div>
   );
