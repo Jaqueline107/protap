@@ -1,7 +1,4 @@
 import { createContext, useContext, ReactNode, useState, useEffect } from "react";
-import { useAuth } from "./AuthContext";
-import { doc, setDoc, getDoc } from "firebase/firestore";
-import { db } from "../../db/firebase";
 
 export type CartProduct = {
   name: string;
@@ -20,23 +17,20 @@ type CartContextType = {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
-  const { user } = useAuth();
   const [cart, setCart] = useState<CartProduct[]>([]);
 
-  // Carrega o carrinho do Firebase
+  // 🔹 Carregar carrinho do localStorage na primeira renderização
   useEffect(() => {
-    if (!user) return;
-    const fetchCart = async () => {
-      const docRef = doc(db, "carrinhos", user.uid);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) setCart(docSnap.data().items || []);
-    };
-    fetchCart();
-  }, [user]);
+    const localCart = localStorage.getItem("cart");
+    if (localCart) {
+      setCart(JSON.parse(localCart));
+    }
+  }, []);
 
-  const persistCart = async (updatedCart: CartProduct[]) => {
-    if (!user) return;
-    await setDoc(doc(db, "carrinhos", user.uid), { items: updatedCart });
+  // 🔹 Sempre que o carrinho mudar, salvar no localStorage
+  const persistCart = (updatedCart: CartProduct[]) => {
+    setCart(updatedCart);
+    localStorage.setItem("cart", JSON.stringify(updatedCart));
   };
 
   const addToCart = (product: CartProduct) => {
@@ -47,29 +41,29 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     } else {
       updatedCart.push(product);
     }
-    setCart(updatedCart);
     persistCart(updatedCart);
   };
 
   const removeFromCart = (name: string) => {
     const updatedCart = cart.filter(p => p.name !== name);
-    setCart(updatedCart);
     persistCart(updatedCart);
   };
 
   const clearCart = () => {
-    setCart([]);
     persistCart([]);
   };
 
   const updateQuantity = (name: string, quantity: number) => {
-    const updatedCart = cart.map(p => p.name === name ? { ...p, quantity } : p);
-    setCart(updatedCart);
+    const updatedCart = cart.map(p =>
+      p.name === name ? { ...p, quantity } : p
+    );
     persistCart(updatedCart);
   };
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart, updateQuantity }}>
+    <CartContext.Provider
+      value={{ cart, addToCart, removeFromCart, clearCart, updateQuantity }}
+    >
       {children}
     </CartContext.Provider>
   );
