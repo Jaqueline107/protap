@@ -4,18 +4,18 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Banner from "./Components/banner";
-import Modal from "../app/Components/modal"; // Componente Modal
+import Modal from "../app/Components/modal";
 import { db } from "../db/firebase";
 import { collection, getDocs } from "firebase/firestore";
 
 // Função para calcular desconto
 const calculateDiscount = (fullPrice: string): string => {
   const numericPrice = parseFloat(fullPrice.replace("R$", "").replace(",", "."));
-  const discountedPrice = (numericPrice * 0.7).toFixed(2); // Aplica 30% de desconto
+  const discountedPrice = (numericPrice * 0.7).toFixed(2); // 30% OFF
   return `R$${discountedPrice.replace(".", ",")}`;
 };
 
-// Função para calcular percentagem de desconto
+// Função para calcular % de desconto
 const calculateDiscountPercentage = (fullPrice: string, price: string): number => {
   const numericFullPrice = parseFloat(fullPrice.replace("R$", "").replace(",", "."));
   const numericPrice = parseFloat(price.replace("R$", "").replace(",", "."));
@@ -23,16 +23,20 @@ const calculateDiscountPercentage = (fullPrice: string, price: string): number =
   return Math.round(discountPercentage);
 };
 
-// Tipo do produto
-type Product = {
-  id: string;
+// Tipo do produto no Firestore
+interface FirestoreProduct {
   name: string;
   fullPrice: string;
+  images: string[];
+}
+
+// Tipo do produto final renderizado
+interface Product extends FirestoreProduct {
+  id: string;
   price: string;
   discount: number;
-  images: string[];
   href: string;
-};
+}
 
 export default function Home() {
   const [showModal, setShowModal] = useState(false);
@@ -45,22 +49,20 @@ export default function Home() {
     const fetchProducts = async () => {
       try {
         const snapshot = await getDocs(collection(db, "produtos"));
-        const produtosData = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as any[];
+        const produtosData: Product[] = snapshot.docs.map((doc) => {
+          const data = doc.data() as FirestoreProduct;
+          const price = calculateDiscount(data.fullPrice);
 
-        const produtosComPreco = produtosData.map(prod => {
-          const price = calculateDiscount(prod.fullPrice);
           return {
-            ...prod,
+            id: doc.id,
+            ...data,
             price,
-            discount: calculateDiscountPercentage(prod.fullPrice, price),
-            href: `/Produtos?id=${prod.id}`,
+            discount: calculateDiscountPercentage(data.fullPrice, price),
+            href: `/Produtos?id=${doc.id}`,
           };
         });
 
-        setProducts(produtosComPreco);
+        setProducts(produtosData);
       } catch (error) {
         console.error("Erro ao carregar produtos:", error);
       } finally {
@@ -93,9 +95,7 @@ export default function Home() {
               Tapetes de altíssima qualidade, feitos especialmente para você.
             </p>
 
-            <p className="text-gray-500 text-2xl font-light mb-5">
-              Melhores Ofertas
-            </p>
+            <p className="text-gray-500 text-2xl font-light mb-5">Melhores Ofertas</p>
             <p className="text-gray-500 text-md font-light mb-5">
               Caso o seu modelo não estiver listado, entre em contato conosco pelo WhatsApp
               <a
@@ -120,7 +120,7 @@ export default function Home() {
           {loading ? (
             <p>Carregando produtos...</p>
           ) : (
-            products.map(product => (
+            products.map((product) => (
               <div
                 key={product.id}
                 className="w-full md:w-80 p-5 h-auto bg-white rounded-lg border border-transparent 

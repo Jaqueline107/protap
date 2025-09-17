@@ -98,6 +98,7 @@ export default function CarpetSelector() {
           .flatMap((p) => p.ano)
       )
     ).map((a) => ({ value: a, label: a }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
 
     setAnos(anosUnicos);
     // Se o ano selecionado atual não existir mais, reseta
@@ -183,7 +184,7 @@ export default function CarpetSelector() {
               onClick={() => setSelectedAno(ano.value)}
               className={`px-4 py-2 border rounded-lg font-semibold transition-all ${
                 selectedAno === ano.value
-                  ? "text-white border-gree-600"
+                  ? "text-white border-green-600"
                   : "bg-transparent text-gray-300 border-gray-400 hover:bg-gray-700"
               }`}
             >
