@@ -183,7 +183,7 @@ export default function CarpetSelector() {
               onClick={() => setSelectedAno(ano.value)}
               className={`px-4 py-2 border rounded-lg font-semibold transition-all ${
                 selectedAno === ano.value
-                  ? "text-white border-green-600"
+                  ? "text-white border-gree-600"
                   : "bg-transparent text-gray-300 border-gray-400 hover:bg-gray-700"
               }`}
             >

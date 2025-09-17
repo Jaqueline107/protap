@@ -1,179 +1,198 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { useCart } from '../context/CartContext';
-import Image from 'next/image';
-import Link from 'next/link';
-import LoginModal from '../Components/loginModal';
+import { Suspense, useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import Image from "next/image";
+import { useCart } from "../context/CartContext";
+import { db } from "../../db/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 type Product = {
+  id: string;
   name: string;
-  price: string;
   fullPrice: string;
+  price: string;
   description: string;
   images: string[];
-  ano?: string | null;
+  ano?: string[]; // anos disponíveis
 };
 
-// Função para aplicar desconto
-const calculateDiscount = (fullPrice: string) =>
-  `R$${(parseFloat(fullPrice.replace("R$", "").replace(",", ".")) * 0.7)
-    .toFixed(2)
-    .replace(".", ",")}`;
-
-// Lista completa de produtos
-const productsData: Record<string, Product> = {
-  Opala: { name: 'Tapete Opala', fullPrice: 'R$50,00', price: calculateDiscount('R$50,00'), description: 'Tapetes...', images: ['/opala/opala.png', '/opala/opala1.png'] },
-  UnoStreet: { name: 'Tapete Uno Street', fullPrice: 'R$50,00', price: calculateDiscount('R$50,00'), description: 'Tapetes...', images: ['/unos/unostreet.png', '/unos/unostreet1.png'] },
-  KombiMala: { name: 'Tapete Kombi Mala', fullPrice: 'R$110,00', price: calculateDiscount('R$110,00'), description: 'Tapetes...', images: ['/kombi/kombimala.png', '/kombi/kombimala1.png'] },
-  Hb20s: { name: 'Tapete HB20s Street', fullPrice: 'R$50,00', price: calculateDiscount('R$50,00'), description: 'Tapetes...', images: ['/hb20/hb20.png', '/hb20/hb201.png'] },
-  Tcross: { name: 'Tapete Tcross', fullPrice: 'R$120,00', price: calculateDiscount('R$120,00'), description: 'Tapetes...', images: ['/Tcross.png'] },
-  Polo: { name: 'Tapete Polo', fullPrice: 'R$115,00', price: calculateDiscount('R$115,00'), description: 'Tapetes...', images: ['/polo/polo.png', '/beneficio/polo.png'] },
-  Hilux: { name: 'Tapete Caçamba Hilux', fullPrice: 'R$140,00', price: calculateDiscount('R$140,00'), description: 'Tapetes...', images: ['/hilux/hiluxfrente.png', '/hilux/hilux.png'] },
-  Toro: { name: 'Tapete Caçamba Toro', fullPrice: 'R$130,00', price: calculateDiscount('R$130,00'), description: 'Tapetes...', images: ['/toro/toro.png'] },
+const calculateDiscountPercentage = (fullPrice: string, price: string): number => {
+  const numericFullPrice = parseFloat(fullPrice.replace("R$", "").replace(",", "."));
+  const numericPrice = parseFloat(price.replace("R$", "").replace(",", "."));
+  return Math.round(((numericFullPrice - numericPrice) / numericFullPrice) * 100);
 };
 
-// Sugestões quando carrinho vazio
-const sugestoes = Object.values(productsData).slice(0, 4);
+function ProdutosContent() {
+  const searchParams = useSearchParams();
+  const productId = searchParams.get("id");
+  const anoSelecionadoQuery = searchParams.get("ano");
 
-export default function CarrinhoPage() {
-  const { cart, removeFromCart, clearCart, updateQuantity } = useCart();
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [mainImage, setMainImage] = useState("");
+  const [selectedAno, setSelectedAno] = useState<string | null>(anoSelecionadoQuery || null);
+  const [showAnos, setShowAnos] = useState(false);
 
-  // Calcula o total considerando quantidade e preço
-  const calcularTotal = () =>
-    cart
-      .reduce((total, item) => {
-        const product = Object.values(productsData).find(p => p.name === item.name);
-        if (!product) return total;
-        return total + parseFloat(product.price.replace("R$", "").replace(",", ".")) * item.quantity;
-      }, 0)
-      .toFixed(2);
+  const { addToCart } = useCart();
 
-  // Checkout Stripe
-  const handleStripeCheckout = async () => {
+  useEffect(() => {
+    if (!productId) return;
+
+    const fetchProduct = async () => {
+      try {
+        const docRef = doc(db, "produtos", productId);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data() as Product;
+          const price = parseFloat(data.fullPrice.replace("R$", "").replace(",", ".")) * 0.7;
+
+          setProduct({
+            ...data,
+            price: `R$${price.toFixed(2).replace(".", ",")}`,
+            ano: data.ano || [], // ✅ garante que sempre seja array
+          });
+
+          setMainImage(data.images[0]);
+        } else setProduct(null);
+      } catch (err) {
+        console.error(err);
+        setProduct(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [productId]);
+
+  if (loading) return <p>Carregando...</p>;
+  if (!product) return <p>Produto não encontrado!</p>;
+
+  const discountPercentage = calculateDiscountPercentage(product.fullPrice, product.price);
+
+  const handleBuyNow = async () => {
+    if (!product) return;
     try {
-      const res = await fetch('/api/checkout_sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: cart.map(p => ({ ...p, ano: p.ano || null })) // ✅ adiciona ano ao checkout
-        }),
+      const res = await fetch("/api/checkout_sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: [{ ...product, quantity: 1, ano: selectedAno }] }),
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
-      else console.error('Erro ao criar sessão', data.error);
+      else console.error("Erro ao criar sessão", data.error);
     } catch (err) {
-      console.error('Erro ao criar sessão:', err);
+      console.error(err);
     }
   };
 
-  if (cart.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center text-center text-gray-600 space-y-6 py-20">
-        <p className="text-xl font-semibold">Seu carrinho está vazio</p>
-        <p className="max-w-sm text-gray-500 mb-8">Não se preocupe, explore nossos produtos e encontre o que você ama!</p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-5xl px-4">
-          {sugestoes.map((produto, idx) => (
-            <Link
-              key={idx}
-              href={`/Produtos?produto=${encodeURIComponent(produto.name.replace('Tapete ', '').replace(/\s/g, ''))}`}
-              className="block bg-white rounded-lg shadow-md hover:shadow-lg transition p-4 flex-col items-center"
-            >
-              <Image src={produto.images[0]} alt={produto.name} width={250} height={250} className="rounded-md object-cover"/>
-              <h3 className="mt-3 text-lg font-semibold text-gray-800">{produto.name}</h3>
-              <p className="mt-1 text-red-600 font-bold">{produto.price}</p>
-            </Link>
-          ))}
-        </div>
-
-        <Link href="/" className="inline-block mt-10 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-md font-semibold shadow-md transition">
-          Ver Todos os Produtos
-        </Link>
-      </div>
-    );
-  }
+  const handleAnoClick = (ano: string) => {
+    setSelectedAno(ano);
+    setShowAnos(false);
+  };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">Seu Carrinho</h1>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        <div className="lg:col-span-2 space-y-6">
-          {cart.map((item, index) => {
-            const product = Object.values(productsData).find(p => p.name === item.name);
-            if (!product) return null;
-            return (
-              <div key={index} className="flex flex-col sm:flex-row items-center gap-6 p-4 bg-white rounded-lg shadow-sm border">
-                <Image src={product.images[0]} alt={product.name} width={120} height={120} className="rounded-lg object-cover"/>
-                <div className="flex-1 w-full">
-                  <h2 className="text-xl font-semibold text-gray-800">{product.name}</h2>
-                  {item.ano && <p className="text-gray-500 text-sm">Ano: {item.ano}</p>}
-                  <p className="line-through text-gray-500">{product.fullPrice}</p>
-                  <p className="text-green-600 font-bold text-lg">{product.price}</p>
-
-                  <div className="mt-3 flex items-center gap-3 flex-wrap">
-                    <span className="text-sm font-medium text-gray-600">Quantidade:</span>
-                    <div className="flex items-center border rounded overflow-hidden">
-                      <button
-                        onClick={() => updateQuantity(item.name, Math.max(1, item.quantity-1))}
-                        className={`px-3 py-1 text-lg ${item.quantity===1 ? 'text-gray-400 cursor-not-allowed' : 'text-red-600 hover:text-red-700'}`}
-                        disabled={item.quantity===1}
-                      >–</button>
-                      <span className="px-4 py-1 text-md text-gray-800 bg-white">{item.quantity}</span>
-                      <button
-                        onClick={() => updateQuantity(item.name, item.quantity+1)}
-                        className="px-3 py-1 text-lg text-green-600 hover:text-green-700"
-                      >+</button>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => removeFromCart(item.name)}
-                    className="text-red-600 hover:text-red-700 text-sm mt-2 underline"
-                  >Remover</button>
-                </div>
-              </div>
-            );
-          })}
+    <div className="flex flex-col items-center">
+      <main className="w-5/6 mt-20 flex flex-col lg:flex-row gap-12">
+        {/* Imagens */}
+        <div className="flex flex-col items-center w-full lg:w-1/2">
+          <Image
+            key={mainImage}
+            src={mainImage}
+            alt={product.name}
+            width={500}
+            height={500}
+            priority
+            className="rounded-sm"
+          />
+          <div className="flex h-32 gap-4 mt-8 justify-center">
+            {product.images.map((src, index) => (
+              <button key={index} onClick={() => setMainImage(src)} className="focus:outline-none">
+                <Image
+                  src={src}
+                  alt={`Miniatura ${index}`}
+                  width={110}
+                  height={70}
+                  className={`cursor-pointer rounded-md border transition-all ${
+                    mainImage === src ? "border-green-500 scale-105" : "border-gray-300"
+                  } hover:border-green-500`}
+                />
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="bg-gray-100 p-6 rounded-lg shadow-md h-fit space-y-4">
-          <h3 className="text-2xl font-semibold text-gray-800 mb-6">Resumo da Compra</h3>
-          <div className="flex justify-between mb-4">
-            <span className="text-gray-700 font-medium">Subtotal</span>
-            <span className="text-gray-800 font-bold">R$ {calcularTotal().replace('.', ',')}</span>
+        {/* Informações */}
+        <div className="w-full lg:w-1/2 flex flex-col justify-start mt-6 gap-2 lg:mt-0">
+          <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
+          <h1 className="text-2xl font-bold text-gray-400 line-through">{product.fullPrice}</h1>
+          <div className="flex gap-3">
+            <p className="text-gray-700 text-4xl font-bold -mt-1">{product.price}</p>
+            {discountPercentage === 30 && <p className="text-3xl font-bold text-lime-500">30% OFF</p>}
           </div>
 
-          {/* Botão de pagamento */}
-          <button
-            onClick={handleStripeCheckout}
-            className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-md text-lg font-semibold transition shadow-md"
-          >
-            Pagar
-          </button>
+          {/* Comprar, Carrinho e Ano */}
+          <div className="flex flex-wrap gap-2 mt-4 items-center">
+            <button
+              onClick={handleBuyNow}
+              className="bg-green-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-700 shadow-md transition-all"
+            >
+              Comprar Agora
+            </button>
+            <button
+              onClick={() => addToCart({ ...product, quantity: 1, ano: selectedAno })}
+              className="bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 shadow-md transition-all"
+            >
+              Adicionar ao Carrinho
+            </button>
 
-          <button
-            onClick={() => {
-              const message = encodeURIComponent("Olá! Gostaria de tirar uma dúvida sobre os produtos.");
-              const whatsappURL = `https://wa.me/5511991861237?text=${message}`;
-              window.open(whatsappURL, "_blank");
-            }}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-md text-lg font-semibold transition shadow-md mt-2"
-          >
-            Tirar Dúvida
-          </button>
+            {product.ano && product.ano.length > 0 && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowAnos(!showAnos)}
+                  className={`px-4 py-1 border rounded-md font-semibold transition-all ${
+                    selectedAno ? "border-blue-500 text-blue-500" : "border-gray-400 text-gray-400"
+                  }`}
+                >
+                  {selectedAno || "Selecionar Ano"}
+                </button>
 
-          <button
-            onClick={clearCart}
-            className="w-full bg-white shadow hover:bg-gray-50 text-black font-semibold py-3 px-4 rounded-md text-base transition mt-4"
-          >
-            Limpar Carrinho
-          </button>
+                {showAnos && (
+                  <div className="absolute top-0 left-full ml-2 flex flex-col gap-2 bg-white p-2 rounded-md shadow-md z-50">
+                    {product.ano
+                      .filter((a) => a !== selectedAno)
+                      .map((ano) => (
+                        <button
+                          key={ano}
+                          onClick={() => handleAnoClick(ano)}
+                          className="px-4 py-1 border border-gray-400 rounded-md text-gray-600 font-medium hover:border-gray-600 hover:text-gray-800"
+                        >
+                          {ano}
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Descrição */}
+          <div className="mt-6 p-4 h-52 bg-gray-100 rounded-lg shadow-md">
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">Descrição do Produto</h2>
+            <p className="text-gray-700 leading-relaxed">{product.description}</p>
+          </div>
         </div>
-      </div>
-
-      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+      </main>
     </div>
+  );
+}
+
+export default function Produtos() {
+  return (
+    <Suspense fallback={<p>Carregando...</p>}>
+      <ProdutosContent />
+    </Suspense>
   );
 }
