@@ -2,12 +2,11 @@
 
 import * as admin from "firebase-admin";
 import { ServiceAccount } from "firebase-admin";
-
-// Importa o JSON do service account
 import serviceAccountJson from "../seu-service-account.json";
+
+
 const serviceAccount = serviceAccountJson as ServiceAccount;
 
-// Inicializa Firebase Admin
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
