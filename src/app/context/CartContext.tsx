@@ -1,11 +1,14 @@
 import { createContext, useContext, ReactNode, useState, useEffect } from "react";
 
 export type CartProduct = {
+  id: string;
   name: string;
   price: string;
   quantity: number;
+  ano?: string | null;
 };
 
+ 
 type CartContextType = {
   cart: CartProduct[];
   addToCart: (product: CartProduct) => void;

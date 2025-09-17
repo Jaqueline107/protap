@@ -10,6 +10,7 @@ interface CartItem {
   price: string; // Ex: "R$50,00"
   images: string[];
   quantity: number;
+  ano?: string | null;
 }
 
 interface CheckoutRequestBody {
@@ -29,6 +30,9 @@ export async function POST(req: Request) {
           images: item.images.map((img) =>
             img.startsWith("http") ? img : `${process.env.NEXT_PUBLIC_URL}${img}`
           ),
+          metadata: {
+            ano: item.ano || "", // ✅ adiciona o ano como metadata
+          },
         },
         unit_amount: Math.round(
           parseFloat(item.price.replace("R$", "").replace(",", ".")) * 100

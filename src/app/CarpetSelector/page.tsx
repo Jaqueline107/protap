@@ -100,7 +100,8 @@ export default function CarpetSelector() {
     ).map((a) => ({ value: a, label: a }));
 
     setAnos(anosUnicos);
-    setSelectedAno("");
+    // Se o ano selecionado atual não existir mais, reseta
+    if (!anosUnicos.find((a) => a.value === selectedAno)) setSelectedAno("");
   }, [selectedMarca, selectedModelo, products]);
 
   const handleVerTapete = () => {
@@ -174,31 +175,29 @@ export default function CarpetSelector() {
       </select>
 
       {/* Ano */}
-      <select
-        value={selectedAno}
-        onChange={(e) => setSelectedAno(e.target.value)}
-        disabled={!selectedModelo || loading}
-        className="bg-black border border-gray-700 rounded-lg p-3 text-gray-300 focus:ring-2 focus:ring-[#E30613] focus:outline-none"
-      >
-        <option value="">
-          {loading
-            ? "Carregando anos..."
-            : selectedModelo
-            ? "Selecione o ano (opcional)"
-            : "Selecione o modelo primeiro"}
-        </option>
-        {anos.map((ano) => (
-          <option key={ano.value} value={ano.value}>
-            {ano.label}
-          </option>
-        ))}
-      </select>
+      {anos.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {anos.map((ano) => (
+            <button
+              key={ano.value}
+              onClick={() => setSelectedAno(ano.value)}
+              className={`px-4 py-2 border rounded-lg font-semibold transition-all ${
+                selectedAno === ano.value
+                  ? "text-white border-green-600"
+                  : "bg-transparent text-gray-300 border-gray-400 hover:bg-gray-700"
+              }`}
+            >
+              {ano.label}
+            </button>
+          ))}
+        </div>
+      )}
 
-      {/* Botão */}
+      {/* Botão Ver Tapete */}
       <button
         onClick={handleVerTapete}
         disabled={loading}
-        className="bg-[#E30613] hover:bg-[#B50B10] text-white py-3 rounded-lg font-semibold text-lg transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+        className="bg-[#E30613] hover:bg-[#B50B10] text-white py-3 rounded-lg font-semibold text-lg transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed mt-2"
       >
         Ver Tapete
       </button>
