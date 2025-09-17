@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
@@ -8,9 +8,10 @@ import { db } from "../../db/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
 type Product = {
+  id: string; // id do documento
   name: string;
-  price: string;
   fullPrice: string;
+  price: string;
   description: string;
   images: string[];
 };
@@ -23,7 +24,7 @@ const calculateDiscountPercentage = (fullPrice: string, price: string): number =
 
 function ProdutosContent() {
   const searchParams = useSearchParams();
-  const produto = searchParams.get("produto");
+  const productId = searchParams.get("id"); // pega o id do documento
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -31,24 +32,39 @@ function ProdutosContent() {
   const { addToCart } = useCart();
 
   useEffect(() => {
-    if (!produto) return;
+    if (!productId) return;
 
     const fetchProduct = async () => {
-      const docRef = doc(db, "produtos", produto);
-      const docSnap = await getDoc(docRef);
+      setLoading(true);
+      try {
+        const docRef = doc(db, "produtos", productId);
+        const docSnap = await getDoc(docRef);
 
-      if (docSnap.exists()) {
-        const data = docSnap.data() as Product;
-        setProduct(data);
-        setMainImage(data.images[0]);
-      } else {
+        if (docSnap.exists()) {
+          const data = docSnap.data() as Omit<Product, "id" | "price">;
+          const discountedPrice = (
+            parseFloat(data.fullPrice.replace("R$", "").replace(",", ".")) * 0.7
+          ).toFixed(2);
+
+          setProduct({
+            ...data,
+            id: docSnap.id, // usa o id do documento
+            price: `R$${discountedPrice.replace(".", ",")}`,
+          });
+          setMainImage(data.images[0]);
+        } else {
+          setProduct(null);
+        }
+      } catch (err) {
+        console.error("Erro ao buscar produto:", err);
         setProduct(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchProduct();
-  }, [produto]);
+  }, [productId]);
 
   useEffect(() => {
     if (!product) return;
@@ -71,36 +87,6 @@ function ProdutosContent() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [product]);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (!product) return;
-    const touchStart = e.touches[0].clientX;
-
-    const handleTouchMove = (e: TouchEvent) => {
-      const touchEnd = e.touches[0].clientX;
-      if (touchStart - touchEnd > 100) {
-        setMainImage(prev => {
-          const currentIndex = product.images.indexOf(prev);
-          return product.images[(currentIndex + 1) % product.images.length];
-        });
-      } else if (touchEnd - touchStart > 100) {
-        setMainImage(prev => {
-          const currentIndex = product.images.indexOf(prev);
-          return product.images[(currentIndex - 1 + product.images.length) % product.images.length];
-        });
-      }
-    };
-
-    window.addEventListener("touchmove", handleTouchMove);
-    window.addEventListener("touchend", () => {
-      window.removeEventListener("touchmove", handleTouchMove);
-    });
-  };
-
-  if (loading) return <p>Carregando...</p>;
-  if (!product) return <p>Produto não encontrado!</p>;
-
-  const discountPercentage = calculateDiscountPercentage(product.fullPrice, product.price);
-
   const handleBuyNow = async () => {
     if (!product) return;
 
@@ -118,6 +104,11 @@ function ProdutosContent() {
     }
   };
 
+  if (loading) return <p>Carregando...</p>;
+  if (!product) return <p>Produto não encontrado!</p>;
+
+  const discountPercentage = calculateDiscountPercentage(product.fullPrice, product.price);
+
   return (
     <div className="flex flex-col items-center">
       <main className="w-5/6 mt-20 flex flex-col lg:flex-row gap-12">
@@ -131,7 +122,6 @@ function ProdutosContent() {
             height={500}
             priority
             className="rounded-sm"
-            onTouchStart={handleTouchStart}
           />
           <div className="flex h-32 gap-4 mt-8 justify-center">
             {product.images.map((src, index) => (

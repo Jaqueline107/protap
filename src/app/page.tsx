@@ -1,137 +1,75 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Banner from "./Components/banner";
-import Modal from "../app/Components/modal"; // Importa o componente Modal
+import Modal from "../app/Components/modal"; // Componente Modal
+import { db } from "../db/firebase";
+import { collection, getDocs } from "firebase/firestore";
 
 // Função para calcular desconto
 const calculateDiscount = (fullPrice: string): string => {
-  const numericPrice = parseFloat(
-    fullPrice.replace("R$", "").replace(",", ".")
-  );
+  const numericPrice = parseFloat(fullPrice.replace("R$", "").replace(",", "."));
   const discountedPrice = (numericPrice * 0.7).toFixed(2); // Aplica 30% de desconto
   return `R$${discountedPrice.replace(".", ",")}`;
 };
 
 // Função para calcular percentagem de desconto
-const calculateDiscountPercentage = (
-  fullPrice: string,
-  price: string
-): number => {
-  const numericFullPrice = parseFloat(
-    fullPrice.replace("R$", "").replace(",", ".")
-  );
+const calculateDiscountPercentage = (fullPrice: string, price: string): number => {
+  const numericFullPrice = parseFloat(fullPrice.replace("R$", "").replace(",", "."));
   const numericPrice = parseFloat(price.replace("R$", "").replace(",", "."));
-  const discountPercentage =
-    ((numericFullPrice - numericPrice) / numericFullPrice) * 100;
-  return Math.round(discountPercentage); // Retorna valor arredondado
+  const discountPercentage = ((numericFullPrice - numericPrice) / numericFullPrice) * 100;
+  return Math.round(discountPercentage);
 };
 
-// Array de produtos
-const products = [
-  {
-    id: 1,
-    name: "Tapete Opala",
-    fullPrice: "R$50,00",
-    price: calculateDiscount("R$50,00"),
-    discount: calculateDiscountPercentage(
-      "R$50,00",
-      calculateDiscount("R$50,00")
-    ),
-    image: "/opala/opala.png",
-    href: "/Produtos?produto=Opala",
-  },
-  {
-    id: 2,
-    name: "Tapete Kombi Mala",
-    fullPrice: "R$100,00",
-    price: calculateDiscount("R$100,00"),
-    discount: calculateDiscountPercentage(
-      "R$100,00",
-      calculateDiscount("R$100,00")
-    ),
-    image: "/kombi/kombimala.png",
-    href: "/Produtos?produto=KombiMala",
-  },
-  {
-    id: 3,
-    name: "Tapete Uno Street",
-    fullPrice: "R$50,00",
-    price: calculateDiscount("R$50,00"),
-    discount: calculateDiscountPercentage(
-      "R$50,00",
-      calculateDiscount("R$50,00")
-    ),
-    image: "/unos/unostreet.png",
-    href: "/Produtos?produto=UnoStreet",
-  },
-  {
-    id: 4,
-    name: "Tapete Hb20s Street",
-    fullPrice: "R$50,00",
-    price: calculateDiscount("R$50,00"),
-    discount: calculateDiscountPercentage(
-      "R$50,00",
-      calculateDiscount("R$50,00")
-    ),
-    image: "/hb20/hb20.png",
-    href: "/Produtos?produto=Hb20s",
-  },
-  {
-    id: 5,
-    name: "Tapete Tcross",
-    fullPrice: "R$120,00",
-    price: calculateDiscount("R$120,00"),
-    discount: calculateDiscountPercentage(
-      "R$120,00",
-      calculateDiscount("R$120,00")
-    ),
-    image: "/tcross.png",
-    href: "/Produtos?produto=Tcross",
-  },
-  {
-    id: 6,
-    name: "Tapete Hilux",
-    fullPrice: "R$140,00",
-    price: calculateDiscount("R$140,00"),
-    discount: calculateDiscountPercentage(
-      "R$140,00",
-      calculateDiscount("R$140,00")
-    ),
-    image: "/hilux/hiluxfrente.png",
-    href: "/Produtos?produto=Hilux",
-  },
-  {
-    id: 7,
-    name: "Tapete Toro",
-    fullPrice: "R$130,00",
-    price: calculateDiscount("R$130,00"),
-    discount: calculateDiscountPercentage(
-      "R$130,00",
-      calculateDiscount("R$130,00")
-    ),
-    image: "/toro/toro.png",
-    href: "/Produtos?produto=Toro",
-  },
-  {
-    id: 8,
-    name: "Tapete Polo",
-    fullPrice: "R$115,00",
-    price: calculateDiscount("R$115,00"),
-    discount: calculateDiscountPercentage(
-      "R$115,00",
-      calculateDiscount("R$115,00")
-    ),
-    image: "/polo/polo.png",
-    href: "/Produtos?produto=Polo",
-  },
-];
+// Tipo do produto
+type Product = {
+  id: string;
+  name: string;
+  fullPrice: string;
+  price: string;
+  discount: number;
+  images: string[];
+  href: string;
+};
 
 export default function Home() {
-  const [showModal, setShowModal] = useState(false); 
-  const [selectedProduct, setSelectedProduct] = useState<string | null>(null); 
+  const [showModal, setShowModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Busca produtos do Firebase
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, "produtos"));
+        const produtosData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as any[];
+
+        const produtosComPreco = produtosData.map(prod => {
+          const price = calculateDiscount(prod.fullPrice);
+          return {
+            ...prod,
+            price,
+            discount: calculateDiscountPercentage(prod.fullPrice, price),
+            href: `/Produtos?id=${prod.id}`,
+          };
+        });
+
+        setProducts(produtosComPreco);
+      } catch (error) {
+        console.error("Erro ao carregar produtos:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   const handleViewBenefits = () => {
     setShowModal(true);
@@ -152,24 +90,22 @@ export default function Home() {
           {/* Card de "Ver benefícios" */}
           <div className="w-full md:w-80 p-5 h-auto bg-white rounded-lg">
             <p className="text-black font-semibold text-2xl mb-5">
-              Tapetes de altissma qualidade, feitos especialmente para você.
+              Tapetes de altíssima qualidade, feitos especialmente para você.
             </p>
 
             <p className="text-gray-500 text-2xl font-light mb-5">
               Melhores Ofertas
             </p>
             <p className="text-gray-500 text-md font-light mb-5">
-              Caso o seu modelo não estiver listado, entre em contato conosco
-              pelo WhatsApp
+              Caso o seu modelo não estiver listado, entre em contato conosco pelo WhatsApp
               <a
                 href="https://wa.me/5511991861237"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-500 underline font-semibold ml-"
+                className="text-blue-500 underline font-semibold ml-1"
               >
                 (11) 99186-1237
-              </a>
-              .
+              </a>.
             </p>
 
             <button
@@ -180,35 +116,33 @@ export default function Home() {
             </button>
           </div>
 
-          {/* Iteração dos produtos */}
-          {products.map((product) => (
-            <div
-              key={product.id}
-              className="w-full md:w-80 p-5 h-auto bg-white rounded-lg border border-transparent 
-                         hover:border-green-600 hover:shadow-xl transition-all duration-300 cursor-pointer"
-            >
-              <Link href={product.href}>
-                <button className="rounded-md p-3 text-black -mt-5 font-semibold text-left w-full h-full">
-                  <Image
-                    src={product.image}
-                    width={450}
-                    height={200}
-                    alt={product.name}
-                  />
-                  <p className="mt-5 text-2xl">{product.name}</p>
-                  <p className="text-gray-400 line-through text-xl">
-                    {product.fullPrice}
-                  </p>
-                  <p className="text-gray-800 text-2xl font-semibold">
-                    {product.price}
-                  </p>
-                  <p className="text-green-600 text-lg font-semibold">
-                    {product.discount}% OFF
-                  </p>
-                </button>
-              </Link>
-            </div>
-          ))}
+          {/* Produtos dinâmicos */}
+          {loading ? (
+            <p>Carregando produtos...</p>
+          ) : (
+            products.map(product => (
+              <div
+                key={product.id}
+                className="w-full md:w-80 p-5 h-auto bg-white rounded-lg border border-transparent 
+                           hover:border-green-600 hover:shadow-xl transition-all duration-300 cursor-pointer"
+              >
+                <Link href={product.href}>
+                  <button className="rounded-md p-3 text-black -mt-5 font-semibold text-left w-full h-full">
+                    <Image
+                      src={product.images[0]}
+                      width={450}
+                      height={200}
+                      alt={product.name}
+                    />
+                    <p className="mt-5 text-2xl">{product.name}</p>
+                    <p className="text-gray-400 line-through text-xl">{product.fullPrice}</p>
+                    <p className="text-gray-800 text-2xl font-semibold">{product.price}</p>
+                    <p className="text-green-600 text-lg font-semibold">{product.discount}% OFF</p>
+                  </button>
+                </Link>
+              </div>
+            ))
+          )}
         </div>
       </main>
 
@@ -221,7 +155,7 @@ export default function Home() {
 
       {/* Redirecionamento */}
       {selectedProduct && (
-        <Link href={`/Produtos?produto=${selectedProduct}`}>
+        <Link href={`/Produtos?id=${selectedProduct}`}>
           <div className="hidden" />
         </Link>
       )}
