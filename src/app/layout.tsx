@@ -66,37 +66,36 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     ProTap
                   </p>
                 </Link>
-
-                {/* Navegação */}
                 <nav className="hidden md:flex gap-12 items-center">
-                   <Link
-                    href="/Sobre"
-                    className="text-gray-200 hover:text-red-600 transition-colors font-medium"
-                  >
-                    Produtos
-                  </Link>
-                  <Link
-                    href="/Sobre"
-                    className="text-gray-200 hover:text-red-600 transition-colors font-medium"
-                  >
-                    Sobre
-                  </Link>
-                  <Link
-                    href="/Contato"
-                    className="text-gray-200 hover:text-red-600 transition-colors font-medium"
-                  >
-                    Contato
-                  </Link>
-                </nav>
+                      <Link
+                        href="/#produtos"
+                        className="text-gray-200 hover:text-red-600 transition-colors font-medium"
+                      >
+                        Produtos
+                      </Link>
 
-                {/* Botão Voltar + Carrinho */}
+                      <Link
+                        href="/Sobre"
+                        className="text-gray-200 hover:text-red-600 transition-colors font-medium"
+                      >
+                        Sobre
+                      </Link>
+
+                      <a
+                        href="https://wa.me/5511991861237"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-200 hover:text-red-600 transition-colors font-medium"
+                      >
+                        Contato
+                      </a>
+                    </nav>
                 <div className="flex items-center gap-4">
                   <BackButton />
                   <CartIcon />
                 </div>
               </div>
             </header>
-
             <main className="pt-24 relative z-0">{children}</main>
           </CartProvider>
         </AuthProvider>
