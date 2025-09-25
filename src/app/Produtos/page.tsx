@@ -14,7 +14,7 @@ type Product = {
   price: string;
   description: string;
   images: string[];
-  ano?: string[]; // anos disponíveis
+  ano?: string[];
 };
 
 const calculateDiscountPercentage = (fullPrice: string, price: string): number => {
@@ -33,6 +33,7 @@ function ProdutosContent() {
   const [mainImage, setMainImage] = useState("");
   const [selectedAno, setSelectedAno] = useState<string | null>(anoSelecionadoQuery || null);
   const [showAnos, setShowAnos] = useState(false);
+  const [showAnoError, setShowAnoError] = useState(false);
 
   const { addToCart } = useCart();
 
@@ -50,12 +51,15 @@ function ProdutosContent() {
 
           setProduct({
             ...data,
+            id: docSnap.id, // 🔑 ID adicionado
             price: `R$${price.toFixed(2).replace(".", ",")}`,
-            ano: data.ano || [], // ✅ garante que sempre seja array
+            ano: data.ano || [],
           });
 
           setMainImage(data.images[0]);
-        } else setProduct(null);
+        } else {
+          setProduct(null);
+        }
       } catch (err) {
         console.error(err);
         setProduct(null);
@@ -72,25 +76,25 @@ function ProdutosContent() {
 
   const discountPercentage = calculateDiscountPercentage(product.fullPrice, product.price);
 
-  const handleBuyNow = async () => {
-    if (!product) return;
-    try {
-      const res = await fetch("/api/checkout_sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: [{ ...product, quantity: 1, ano: selectedAno }] }),
-      });
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else console.error("Erro ao criar sessão", data.error);
-    } catch (err) {
-      console.error(err);
+  const handleBuyNow = () => {
+    if (!selectedAno) {
+      setShowAnoError(true);
+      return;
     }
+
+    if (!product?.id) {
+      alert("Produto inválido. Tente novamente.");
+      return;
+    }
+
+    // Redireciona para o checkout com productId correto
+    window.location.href = `/Checkout?productId=${product.id}&ano=${selectedAno}`;
   };
 
   const handleAnoClick = (ano: string) => {
     setSelectedAno(ano);
     setShowAnos(false);
+    setShowAnoError(false);
   };
 
   return (
@@ -130,7 +134,9 @@ function ProdutosContent() {
           <h1 className="text-2xl font-bold text-gray-400 line-through">{product.fullPrice}</h1>
           <div className="flex gap-3">
             <p className="text-gray-700 text-4xl font-bold -mt-1">{product.price}</p>
-            {discountPercentage === 30 && <p className="text-3xl font-bold text-lime-500">30% OFF</p>}
+            {discountPercentage === 30 && (
+              <p className="text-3xl font-bold text-lime-500">30% OFF</p>
+            )}
           </div>
 
           {/* Comprar, Carrinho e Ano */}
@@ -153,7 +159,11 @@ function ProdutosContent() {
                 <button
                   onClick={() => setShowAnos(!showAnos)}
                   className={`px-4 py-1 border rounded-md font-semibold transition-all ${
-                    selectedAno ? "border-blue-500 text-blue-500" : "border-gray-400 text-gray-400"
+                    selectedAno
+                      ? "border-blue-500 text-blue-500"
+                      : showAnoError
+                      ? "border-red-500 text-red-500"
+                      : "border-gray-400 text-gray-400"
                   }`}
                 >
                   {selectedAno || "Selecionar Ano"}
