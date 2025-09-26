@@ -1,4 +1,12 @@
+// app/page.tsx
 export const metadata = {
-  title: "ProTap",
-  description: "Tapetes Automotivos",
+  title: "Minha Loja de Tapetes Automotivos",
+  description: "Compre tapetes de alta qualidade para seu carro. Ofertas imperdíveis!",
+  keywords: ["tapetes automotivos", "tapetes carro", "loja online"],
+  authors: [{ name: "Jaqueline  Moura" }],
+  openGraph: {
+    title: "Minha Loja de Tapetes Automotivos",
+    description: "Compre tapetes de alta qualidade para seu carro. Ofertas imperdíveis!",
+    url: "https://www.protap.com.br",
+  },
 };
