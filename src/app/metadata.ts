@@ -1,4 +1,3 @@
-// app/page.tsx
 export const metadata = {
   title: "Minha Loja de Tapetes Automotivos",
   description: "Compre tapetes de alta qualidade para seu carro. Ofertas imperdíveis!",
