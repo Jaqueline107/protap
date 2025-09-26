@@ -9,17 +9,6 @@ import { db } from "../db/firebase";
 import { collection, getDocs } from "firebase/firestore";
 
 
-export const metadata = {
-  title: "Tapetes Automotivos - Loja Online",
-  description: "Compre tapetes automotivos de alta qualidade. Modelos para todos os carros!",
-  openGraph: {
-    title: "Tapetes Automotivos - Loja Online",
-    description: "Compre tapetes automotivos de alta qualidade.",
-    url: "https://www.protapcar.com.br",
-  },
-};
-
-
 // Função para calcular desconto
 const calculateDiscount = (fullPrice: string): string => {
   const numericPrice = parseFloat(fullPrice.replace("R$", "").replace(",", "."));
