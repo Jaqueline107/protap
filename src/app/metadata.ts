@@ -6,6 +6,6 @@ export const metadata = {
   openGraph: {
     title: "Minha Loja de Tapetes Automotivos",
     description: "Compre tapetes de alta qualidade para seu carro. Ofertas imperdíveis!",
-    url: "https://www.protap.com.br",
+    url: "https://www.protapcar.com.br",
   },
 };
