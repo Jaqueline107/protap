@@ -27,6 +27,7 @@ export default function CheckoutPage() {
   const productId = searchParams.get("productId");
   const ano = searchParams.get("ano");
 
+  const [mounted, setMounted] = useState(false);
   const [produto, setProduto] = useState<Produto | null>(null);
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
@@ -37,8 +38,12 @@ export default function CheckoutPage() {
   const [shippingMethod, setShippingMethod] = useState("");
   const [loadingFrete, setLoadingFrete] = useState(false);
 
+  // Garante que só rode no client
+  useEffect(() => setMounted(true), []);
+
+  // Carrega produto do Firebase
   useEffect(() => {
-    if (!productId) return;
+    if (!mounted || !productId) return;
 
     const fetchProduct = async () => {
       try {
@@ -64,8 +69,9 @@ export default function CheckoutPage() {
     };
 
     fetchProduct();
-  }, [productId, ano]);
+  }, [mounted, productId, ano]);
 
+  // Validação simples de CPF
   const validarCPF = (cpf: string) => {
     const cleanCpf = cpf.replace(/\D/g, "");
     if (cleanCpf.length !== 11) return false;
@@ -73,6 +79,7 @@ export default function CheckoutPage() {
     return true;
   };
 
+  // Consulta frete via API
   const consultarFrete = async () => {
     if (!cep) return alert("Digite seu CEP");
     setLoadingFrete(true);
@@ -97,6 +104,7 @@ export default function CheckoutPage() {
     }
   };
 
+  // Confirma compra e cria sessão Stripe
   const handleConfirmarCompra = async () => {
     if (!nome || !email || !cpf) return alert("Preencha todos os campos");
     if (!validarCPF(cpf)) {
@@ -145,6 +153,7 @@ export default function CheckoutPage() {
     }
   };
 
+  if (!mounted) return null; // evita prerender
   if (!produto) return <p className="p-8 text-center">Carregando produto...</p>;
 
   return (
