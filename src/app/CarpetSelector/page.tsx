@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
 interface Product {
@@ -24,32 +24,23 @@ export default function CarpetSelector() {
   const router = useRouter();
 
   const [products, setProducts] = useState<Product[]>([]);
-  const [marcas, setMarcas] = useState<Option[]>([]);
-  const [modelos, setModelos] = useState<Option[]>([]);
-  const [anos, setAnos] = useState<Option[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [selectedMarca, setSelectedMarca] = useState("");
   const [selectedModelo, setSelectedModelo] = useState("");
   const [selectedAno, setSelectedAno] = useState("");
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  // Carrega todos os produtos do Firebase ao iniciar
+  // Carrega produtos do Firebase
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
       setError("");
       try {
-        const res = await fetch("/api/products"); // sua API que retorna produtos do Firebase
+        const res = await fetch("/api/products"); // API que retorna produtos
         if (!res.ok) throw new Error("Falha ao buscar produtos");
         const data: Product[] = await res.json();
         setProducts(data);
-
-        const marcasUnicas = Array.from(new Set(data.map((p) => p.marca))).map(
-          (m) => ({ value: m, label: m })
-        );
-        setMarcas(marcasUnicas);
       } catch (err) {
         console.error(err);
         setError("Erro ao carregar produtos");
@@ -61,47 +52,33 @@ export default function CarpetSelector() {
     fetchProducts();
   }, []);
 
-  // Atualiza os modelos quando a marca muda
-  useEffect(() => {
-    if (!selectedMarca) {
-      setModelos([]);
-      setSelectedModelo("");
-      return;
-    }
+  // Computa marcas únicas
+  const marcas = useMemo(() => {
+    const unique = Array.from(new Set(products.map((p) => p.marca)));
+    return unique.map((m) => ({ value: m, label: m }));
+  }, [products]);
 
-    const modelosUnicos = Array.from(
+  // Computa modelos únicos da marca selecionada
+  const modelos = useMemo(() => {
+    if (!selectedMarca) return [];
+    const unique = Array.from(
+      new Set(products.filter((p) => p.marca === selectedMarca).map((p) => p.modelo))
+    );
+    return unique.map((m) => ({ value: m, label: m }));
+  }, [products, selectedMarca]);
+
+  // Computa anos únicos do modelo selecionado
+  const anos = useMemo(() => {
+    if (!selectedMarca || !selectedModelo) return [];
+    const unique = Array.from(
       new Set(
         products
-          .filter((p) => p.marca === selectedMarca)
-          .map((p) => p.modelo)
-      )
-    ).map((m) => ({ value: m, label: m }));
-
-    setModelos(modelosUnicos);
-    setSelectedModelo("");
-  }, [selectedMarca, products]);
-
-  // Atualiza os anos quando o modelo muda
-  useEffect(() => {
-    if (!selectedModelo) {
-      setAnos([]);
-      setSelectedAno("");
-      return;
-    }
-
-    const anosUnicos = Array.from(
-      new Set(
-        products
-          .filter(
-            (p) => p.marca === selectedMarca && p.modelo === selectedModelo
-          )
+          .filter((p) => p.marca === selectedMarca && p.modelo === selectedModelo)
           .flatMap((p) => p.ano)
       )
-    ).map((a) => ({ value: a, label: a }));
-
-    setAnos(anosUnicos);
-    if (!anosUnicos.find((a) => a.value === selectedAno)) setSelectedAno("");
-  }, [selectedMarca, selectedModelo, products, selectedAno]); // adicionado selectedAno
+    );
+    return unique.map((a) => ({ value: a, label: a }));
+  }, [products, selectedMarca, selectedModelo]);
 
   const handleVerTapete = () => {
     if (!selectedMarca || !selectedModelo) {
@@ -189,7 +166,6 @@ export default function CarpetSelector() {
         </div>
       )}
 
-      {/* Botão Ver Tapete */}
       <button
         onClick={handleVerTapete}
         disabled={loading}

@@ -1,6 +1,12 @@
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+const publicUrl = process.env.NEXT_PUBLIC_URL;
+
+if (!stripeSecretKey) throw new Error("STRIPE_SECRET_KEY não está definido");
+if (!publicUrl) throw new Error("NEXT_PUBLIC_URL não está definido");
+
+const stripe = new Stripe(stripeSecretKey, {
   apiVersion: "2025-08-27.basil",
 });
 
@@ -27,22 +33,29 @@ export async function POST(req: Request) {
     const body: CheckoutRequestBody = await req.json();
     const { items, shipping } = body;
 
-    // Produtos do carrinho
-    const lineItems = items.map((item) => ({
+    if (!items || items.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Carrinho vazio" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const lineItems = items.map((item: CartItem) => ({
       price_data: {
         currency: "brl",
         product_data: {
           name: item.ano ? `${item.name} (${item.ano})` : item.name,
           images: item.images.map((img) =>
-            img.startsWith("http") ? img : `${process.env.NEXT_PUBLIC_URL}${img}`
+            img.startsWith("http") ? img : `${publicUrl}${img}`
           ),
         },
-        unit_amount: Math.round(parseFloat(item.price.replace("R$", "").replace(",", ".")) * 100),
+        unit_amount: Math.round(
+          parseFloat(item.price.replace("R$", "").replace(",", ".")) * 100
+        ),
       },
       quantity: item.quantity,
     }));
 
-    // Adiciona frete como item separado
     if (shipping && shipping.valor) {
       const freteNome =
         shipping.method === "04014"
@@ -54,28 +67,25 @@ export async function POST(req: Request) {
       lineItems.push({
         price_data: {
           currency: "brl",
-          product_data: {
-            name: freteNome,
-            images: []
-          },
+          product_data: { name: freteNome, images: [] },
           unit_amount: Math.round(parseFloat(shipping.valor.replace(",", ".")) * 100),
         },
         quantity: 1,
       });
     }
 
-    // Cria sessão de checkout Stripe
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
       line_items: lineItems,
-      success_url: `${process.env.NEXT_PUBLIC_URL}/success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_URL}/`,
+      success_url: `${publicUrl}/success`,
+      cancel_url: `${publicUrl}/`,
     });
 
-    return new Response(JSON.stringify({ url: session.url }), {
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ url: session.url }),
+      { headers: { "Content-Type": "application/json" } }
+    );
   } catch (err) {
     console.error(err);
     return new Response(
