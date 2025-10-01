@@ -9,12 +9,13 @@ import { doc, getDoc } from "firebase/firestore";
 
 type Product = {
   id: string;
-  name: string;
+  titulo: string; // Corrigido
   fullPrice: string;
   price: string;
   description: string;
   images: string[];
   ano?: string[];
+  modelo?: string;
 };
 
 // Função robusta para converter preço string → number
@@ -110,7 +111,7 @@ function ProdutosContent() {
           <Image
             key={mainImage}
             src={mainImage}
-            alt={product.name}
+            alt={product.titulo}
             width={500}
             height={500}
             priority
@@ -136,7 +137,7 @@ function ProdutosContent() {
 
         {/* Informações */}
         <div className="w-full lg:w-1/2 flex flex-col justify-start mt-6 gap-2 lg:mt-0">
-          <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{product.titulo}</h1>
           <h1 className="text-2xl font-bold text-gray-400 line-through">{product.fullPrice}</h1>
           <div className="flex gap-3">
             <p className="text-gray-700 text-4xl font-bold -mt-1">{product.price}</p>
@@ -154,7 +155,10 @@ function ProdutosContent() {
               Comprar Agora
             </button>
             <button
-              onClick={() => addToCart({ ...product, quantity: 1, ano: selectedAno })}
+              onClick={() => addToCart({
+                ...product, quantity: 1, ano: selectedAno,
+                name: ""
+              })}
               className="bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 shadow-md transition-all"
             >
               Adicionar ao Carrinho
