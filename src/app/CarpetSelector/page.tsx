@@ -15,11 +15,6 @@ interface Product {
   images: string[];
 }
 
-interface Option {
-  value: string;
-  label: string;
-}
-
 export default function CarpetSelector() {
   const router = useRouter();
 
