@@ -1,38 +1,50 @@
-import { NextRequest, NextResponse } from "next/server";
-import { calcularPrecoPrazo, PrecoPrazoRequest } from "correios-brasil";
+import { NextResponse } from "next/server";
+import axios from "axios";
+import { calcularPrecoPrazo } from "correios-brasil";
 
-export async function POST(req: NextRequest) {
+const api = axios.create({
+  timeout: 30000, // 30 segundos
+});
+
+// Valores de fallback configuráveis
+const fallbackFrete = {
+  PAC: { prazo: "5-10 dias úteis", valor: "R$ 30,00" },
+  SEDEX: { prazo: "2-5 dias úteis", valor: "R$ 60,00" },
+};
+
+export async function POST(req: Request) {
   try {
-    const { cepDestino } = await req.json();
+    const body = await req.json();
+    const { cepDestino, peso, comprimento, altura, largura } = body;
 
-    if (!cepDestino) {
-      return NextResponse.json({ error: "cepDestino é obrigatório" });
-    }
-
-    // Dados padrão do produto/frete
-    const dadosPadrao: PrecoPrazoRequest = {
-      nCdEmpresa: "",
-      sDsSenha: "",
-      nCdServico: ["04014", "04510"], // Sedex e PAC
-      sCepOrigem: "01001000", // CEP de origem da loja
+    const args = {
+      sCepOrigem: "01001-000", // ajuste para seu CEP de origem
       sCepDestino: cepDestino,
-      nVlPeso: "1", // peso padrão em kg (string)
-      nCdFormato: "1", // 1 = caixa/pacote
-      nVlComprimento: "20", // cm
-      nVlAltura: "10", // cm
-      nVlLargura: "15", // cm
-      nVlDiametro: "0", // cm
-      nVlValorDeclarado: "0", // R$
-      sCdMaoPropria: "n",
-      sCdAvisoRecebimento: "n",
+      nVlPeso: peso || "1",
+      nCdFormato: "1",
+      nVlComprimento: comprimento || "20",
+      nVlAltura: altura || "20",
+      nVlLargura: largura || "20",
+      nVlDiametro: "0",
+      sCdMaoPropria: "N",
+      nVlValorDeclarado: "0",
+      sCdAvisoRecebimento: "N",
+      nCdServico: ["04014", "04510"], // SEDEX e PAC
     };
 
-    const servicos = await calcularPrecoPrazo(dadosPadrao);
+    const resultado = await calcularPrecoPrazo(args);
 
-    // Retorna um array de serviços (PAC e Sedex)
-    return NextResponse.json({ Servicos: servicos });
-  } catch (err) {
-    console.error("Erro ao chamar Correios:", err);
-    return NextResponse.json({ error: "Erro interno ao consultar frete" });
+    return NextResponse.json({ sucesso: true, dados: resultado });
+  } catch (err: any) {
+    console.error("Erro ao consultar Correios:", err?.code || err);
+
+    return NextResponse.json(
+      {
+        sucesso: false,
+        erro: "Serviço dos Correios indisponível. Usando valores estimados.",
+        estimativa: fallbackFrete,
+      },
+      { status: 503 }
+    );
   }
 }

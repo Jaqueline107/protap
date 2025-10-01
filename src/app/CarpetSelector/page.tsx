@@ -98,12 +98,10 @@ export default function CarpetSelector() {
           .flatMap((p) => p.ano)
       )
     ).map((a) => ({ value: a, label: a }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
 
     setAnos(anosUnicos);
-    // Se o ano selecionado atual não existir mais, reseta
     if (!anosUnicos.find((a) => a.value === selectedAno)) setSelectedAno("");
-  }, [selectedMarca, selectedModelo, products]);
+  }, [selectedMarca, selectedModelo, products, selectedAno]); // adicionado selectedAno
 
   const handleVerTapete = () => {
     if (!selectedMarca || !selectedModelo) {
@@ -111,7 +109,6 @@ export default function CarpetSelector() {
       return;
     }
 
-    // Encontra o produto pelo modelo e marca (independente do ano)
     const produtoSelecionado = products.find(
       (p) => p.marca === selectedMarca && p.modelo === selectedModelo
     );
@@ -122,8 +119,6 @@ export default function CarpetSelector() {
     }
 
     const query = new URLSearchParams({ id: produtoSelecionado.id });
-
-    // Ano é opcional
     if (selectedAno) query.set("ano", selectedAno);
 
     router.push(`/Produtos?${query.toString()}`);

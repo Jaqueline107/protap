@@ -5,12 +5,23 @@ import { useSearchParams } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../db/firebase";
 
+interface Produto {
+  id: string;
+  titulo: string;
+  modelo?: string;
+  ano?: string[];
+  images: string[];
+  fullPrice: string;
+  price: string;
+  anoSelecionado?: string | null;
+}
+
 export default function CheckoutPage() {
   const searchParams = useSearchParams();
   const productId = searchParams.get("productId");
   const ano = searchParams.get("ano");
 
-  const [produto, setProduto] = useState<any>(null);
+  const [produto, setProduto] = useState<Produto | null>(null);
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [cpf, setCpf] = useState("");
@@ -29,7 +40,8 @@ export default function CheckoutPage() {
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
-          const data = docSnap.data();
+          const data = docSnap.data() as Omit<Produto, "id" | "price" | "anoSelecionado">;
+
           const fullPrice = parseFloat(data.fullPrice.replace("R$", "").replace(",", "."));
           const price = (fullPrice * 0.7).toFixed(2);
 
@@ -37,7 +49,7 @@ export default function CheckoutPage() {
             id: docSnap.id,
             ...data,
             price: `R$${price.replace(".", ",")}`,
-            anoSelecionado: ano || data.ano?.[0] || null,
+            anoSelecionado: ano || (data.ano ? data.ano[0] : null),
           });
         } else console.error("Produto não encontrado");
       } catch (err) {
@@ -104,7 +116,7 @@ export default function CheckoutPage() {
           items: [
             {
               id: produto.id,
-              name: produto.name,
+              name: produto.titulo,
               price: produto.price,
               quantity: 1,
               ano: produto.anoSelecionado,
@@ -131,9 +143,8 @@ export default function CheckoutPage() {
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-50 p-6">
-      {/* Formulário Centralizado */}
       <div className="flex flex-col w-full max-w-md bg-white rounded-lg shadow-md p-8 gap-4">
-        <h2 className="text-2xl font-bold text-center">{produto.name}</h2>
+        <h2 className="text-2xl font-bold text-center">{produto.titulo}</h2>
         <p className="text-gray-600 text-center">Ano: {produto.anoSelecionado}</p>
         <p className="text-gray-600 text-center">Modelo: {produto.modelo || "Não informado"}</p>
         <p className="text-2xl font-semibold text-green-700 text-center">{produto.price}</p>

@@ -6,6 +6,7 @@ import { collection, getDocs, setDoc, doc, deleteDoc } from "firebase/firestore"
 
 interface Produto {
   id: string;
+
   modelo: string;
   titulo: string;
   fullPrice: string;
@@ -35,7 +36,7 @@ export default function AdminProdutosModal() {
   // Proteção por senha
   useEffect(() => {
     const senha = prompt("Digite a senha para acessar a página:");
-    if (senha === "minhaSenhaSegura") {
+    if (senha === "UnlockAdminArea") {
       setAutorizado(true);
     } else {
       alert("❌ Você não tem acesso!");
@@ -43,30 +44,31 @@ export default function AdminProdutosModal() {
     }
   }, []);
 
+  // Buscar produtos
+  useEffect(() => {
+    if (!autorizado) return;
+    const fetchProdutos = async () => {
+      setLoading(true);
+      try {
+        const snapshot = await getDocs(collection(db, "produtos"));
+        const lista = snapshot.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as Omit<Produto, "id">),
+        })) as Produto[];
+        setProdutos(lista);
+      } catch (err) {
+        console.error("Erro ao buscar produtos:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProdutos();
+  }, [autorizado]);
+
   if (!autorizado) return null;
 
   const slugify = (text: string) =>
     text.toLowerCase().replace(/\s+/g, "-").replace(/[^\w-]+/g, "");
-
-  const fetchProdutos = async () => {
-    setLoading(true);
-    try {
-      const snapshot = await getDocs(collection(db, "produtos"));
-      const lista = snapshot.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<Produto, "id">),
-      })) as Produto[];
-      setProdutos(lista);
-    } catch (err) {
-      console.error("Erro ao buscar produtos:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchProdutos();
-  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -110,7 +112,13 @@ export default function AdminProdutosModal() {
       });
       setEditingId(null);
       setModalOpen(false);
-      fetchProdutos();
+      // Atualiza a lista
+      const snapshot = await getDocs(collection(db, "produtos"));
+      const lista = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as Omit<Produto, "id">),
+      })) as Produto[];
+      setProdutos(lista);
     } catch (err) {
       console.error(err);
       setMessage("❌ Erro ao salvar produto");
@@ -157,16 +165,11 @@ export default function AdminProdutosModal() {
       </button>
 
       {message && (
-        <p
-          className={`mb-4 ${
-            message.startsWith("✅") ? "text-green-600" : "text-red-600"
-          }`}
-        >
+        <p className={`mb-4 ${message.startsWith("✅") ? "text-green-600" : "text-red-600"}`}>
           {message}
         </p>
       )}
 
-      {/* Lista de produtos */}
       {produtos.length === 0 ? (
         <p>Nenhum produto cadastrado.</p>
       ) : (
@@ -207,7 +210,6 @@ export default function AdminProdutosModal() {
         </div>
       )}
 
-      {/* Modal */}
       {modalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto">
           <div className="bg-white p-6 rounded-lg w-full max-w-lg relative max-h-[85vh] overflow-y-auto mt-32 shadow-lg">

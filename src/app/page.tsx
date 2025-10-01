@@ -8,7 +8,6 @@ import Modal from "../app/Components/modal";
 import { db } from "../db/firebase";
 import { collection, getDocs } from "firebase/firestore";
 
-
 // Função para calcular desconto
 const calculateDiscount = (fullPrice: string): string => {
   const numericPrice = parseFloat(fullPrice.replace("R$", "").replace(",", "."));
@@ -20,13 +19,12 @@ const calculateDiscount = (fullPrice: string): string => {
 const calculateDiscountPercentage = (fullPrice: string, price: string): number => {
   const numericFullPrice = parseFloat(fullPrice.replace("R$", "").replace(",", "."));
   const numericPrice = parseFloat(price.replace("R$", "").replace(",", "."));
-  const discountPercentage = ((numericFullPrice - numericPrice) / numericFullPrice) * 100;
-  return Math.round(discountPercentage);
+  return Math.round(((numericFullPrice - numericPrice) / numericFullPrice) * 100);
 };
 
 // Tipo do produto no Firestore
 interface FirestoreProduct {
-  name: string;
+  titulo: string; // ← agora pega o título do Admin
   fullPrice: string;
   images: string[];
 }
@@ -34,6 +32,7 @@ interface FirestoreProduct {
 // Tipo do produto final renderizado
 interface Product extends FirestoreProduct {
   id: string;
+  name: string; // ← name será o mesmo que titulo
   price: string;
   discount: number;
   href: string;
@@ -45,7 +44,6 @@ export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Busca produtos do Firebase
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -56,7 +54,10 @@ export default function Home() {
 
           return {
             id: doc.id,
-            ...data,
+            name: data.titulo, // ← aqui usamos o titulo como name
+            titulo: data.titulo,
+            fullPrice: data.fullPrice,
+            images: data.images,
             price,
             discount: calculateDiscountPercentage(data.fullPrice, price),
             href: `/Produtos?id=${doc.id}`,
@@ -74,10 +75,7 @@ export default function Home() {
     fetchProducts();
   }, []);
 
-  const handleViewBenefits = () => {
-    setShowModal(true);
-  };
-
+  const handleViewBenefits = () => setShowModal(true);
   const handleProductSelection = (product: string) => {
     setSelectedProduct(product);
     setShowModal(false);
@@ -87,7 +85,6 @@ export default function Home() {
     <div className="flex flex-col items-center">
       <Banner />
 
-      {/* Conteúdo Principal */}
       <main id="produtos" className="w-5/6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Card de "Ver benefícios" */}
@@ -147,14 +144,12 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Modal */}
       <Modal
         isVisible={showModal}
         onClose={() => setShowModal(false)}
         onSelect={handleProductSelection}
       />
 
-      {/* Redirecionamento */}
       {selectedProduct && (
         <Link href={`/Produtos?id=${selectedProduct}`}>
           <div className="hidden" />
