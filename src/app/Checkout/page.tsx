@@ -16,6 +16,12 @@ interface Produto {
   anoSelecionado?: string | null;
 }
 
+interface Frete {
+  Codigo: string;
+  Valor: string;
+  PrazoEntrega: string | number;
+}
+
 export default function CheckoutPage() {
   const searchParams = useSearchParams();
   const productId = searchParams.get("productId");
@@ -27,7 +33,7 @@ export default function CheckoutPage() {
   const [cpf, setCpf] = useState("");
   const [cpfErro, setCpfErro] = useState(false);
   const [cep, setCep] = useState("");
-  const [fretes, setFretes] = useState<any[]>([]);
+  const [fretes, setFretes] = useState<Frete[]>([]);
   const [shippingMethod, setShippingMethod] = useState("");
   const [loadingFrete, setLoadingFrete] = useState(false);
 
@@ -203,7 +209,7 @@ export default function CheckoutPage() {
             Retirada na Loja (Grátis)
           </label>
 
-          {fretes.map((f: any) => (
+          {fretes.map((f: Frete) => (
             <label
               key={f.Codigo}
               className="flex items-center gap-2 border p-2 rounded cursor-pointer justify-center"

@@ -1,10 +1,5 @@
 import { NextResponse } from "next/server";
-import axios from "axios";
 import { calcularPrecoPrazo } from "correios-brasil";
-
-const api = axios.create({
-  timeout: 30000, // 30 segundos
-});
 
 // Valores de fallback configuráveis
 const fallbackFrete = {
@@ -35,8 +30,8 @@ export async function POST(req: Request) {
     const resultado = await calcularPrecoPrazo(args);
 
     return NextResponse.json({ sucesso: true, dados: resultado });
-  } catch (err: any) {
-    console.error("Erro ao consultar Correios:", err?.code || err);
+  } catch (err: unknown) {
+    console.error("Erro ao consultar Correios:", err);
 
     return NextResponse.json(
       {
