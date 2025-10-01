@@ -210,7 +210,7 @@ export default function CheckoutPage() {
         </div>
 
         <button
-          onClick={handleConfirmarCompras}
+          onClick={handleConfirmarCompra}
           className="bg-green-600 text-white py-2 rounded mt-4 w-full"
         >
           Confirmar Compra

@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCart } from "../context/CartContext";
 import { db } from "../../db/firebase";
@@ -17,9 +17,14 @@ type Product = {
   ano?: string[];
 };
 
+// Função robusta para converter preço string → number
+const parsePrice = (value: string): number => {
+  return parseFloat(value.replace(/[^\d,]/g, "").replace(",", "."));
+};
+
 const calculateDiscountPercentage = (fullPrice: string, price: string): number => {
-  const numericFullPrice = parseFloat(fullPrice.replace("R$", "").replace(",", "."));
-  const numericPrice = parseFloat(price.replace("R$", "").replace(",", "."));
+  const numericFullPrice = parsePrice(fullPrice);
+  const numericPrice = parsePrice(price);
   return Math.round(((numericFullPrice - numericPrice) / numericFullPrice) * 100);
 };
 
@@ -36,6 +41,7 @@ function ProdutosContent() {
   const [showAnoError, setShowAnoError] = useState(false);
 
   const { addToCart } = useCart();
+  const router = useRouter();
 
   useEffect(() => {
     if (!productId) return;
@@ -47,11 +53,11 @@ function ProdutosContent() {
 
         if (docSnap.exists()) {
           const data = docSnap.data() as Product;
-          const price = parseFloat(data.fullPrice.replace("R$", "").replace(",", ".")) * 0.7;
+          const price = parsePrice(data.fullPrice) * 0.7;
 
           setProduct({
             ...data,
-            id: docSnap.id, // 🔑 ID adicionado
+            id: docSnap.id,
             price: `R$${price.toFixed(2).replace(".", ",")}`,
             ano: data.ano || [],
           });
@@ -87,8 +93,7 @@ function ProdutosContent() {
       return;
     }
 
-    // Redireciona para o checkout com productId correto
-    window.location.href = `/Checkout?productId=${product.id}&ano=${selectedAno}`;
+    router.push(`/Checkout?productId=${product.id}&ano=${selectedAno}`);
   };
 
   const handleAnoClick = (ano: string) => {
@@ -109,6 +114,7 @@ function ProdutosContent() {
             width={500}
             height={500}
             priority
+            sizes="(max-width: 768px) 100vw, 50vw"
             className="rounded-sm"
           />
           <div className="flex h-32 gap-4 mt-8 justify-center">
@@ -134,8 +140,8 @@ function ProdutosContent() {
           <h1 className="text-2xl font-bold text-gray-400 line-through">{product.fullPrice}</h1>
           <div className="flex gap-3">
             <p className="text-gray-700 text-4xl font-bold -mt-1">{product.price}</p>
-            {discountPercentage === 30 && (
-              <p className="text-3xl font-bold text-lime-500">30% OFF</p>
+            {discountPercentage > 0 && (
+              <p className="text-3xl font-bold text-lime-500">{discountPercentage}% OFF</p>
             )}
           </div>
 
@@ -170,7 +176,7 @@ function ProdutosContent() {
                 </button>
 
                 {showAnos && (
-                  <div className="absolute top-0 left-full ml-2 flex flex-col gap-2 bg-white p-2 rounded-md shadow-md z-50">
+                  <div className="absolute top-full left-0 mt-2 w-max flex flex-col gap-2 bg-white p-2 rounded-md shadow-md z-50">
                     {product.ano
                       .filter((a) => a !== selectedAno)
                       .map((ano) => (
@@ -189,7 +195,7 @@ function ProdutosContent() {
           </div>
 
           {/* Descrição */}
-          <div className="mt-6 p-4 h-52 bg-gray-100 rounded-lg shadow-md">
+          <div className="mt-6 p-4 h-52 bg-gray-100 rounded-lg shadow-md overflow-y-auto">
             <h2 className="text-xl font-semibold text-gray-800 mb-2">Descrição do Produto</h2>
             <p className="text-gray-700 leading-relaxed">{product.description}</p>
           </div>
