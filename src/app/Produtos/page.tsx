@@ -172,11 +172,11 @@ function ProdutosContent() {
                     selectedAno
                       ? "border-blue-500 text-blue-500"
                       : showAnoError
-                      ? "border-red-500 text-red-500"
+                      ? "border-red-500 bg-red-500 text-white"
                       : "border-gray-400 text-gray-400"
                   }`}
                 >
-                  {selectedAno || "Selecionar Ano"}
+                  {selectedAno || "Selecione Ano"}
                 </button>
 
                 {showAnos && (
