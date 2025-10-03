@@ -1,13 +1,12 @@
+// src/app/Checkout/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../db/firebase";
-
 import CheckoutForm from "./CheckoutForm";
 
-interface Produto {
+export interface Produto {
   id: string;
   titulo: string;
   modelo?: string;
@@ -18,10 +17,13 @@ interface Produto {
   anoSelecionado?: string | null;
 }
 
-export default function CheckoutPage() {
-  const searchParams = useSearchParams();
-  const productId = searchParams.get("productId") || undefined;
-  const ano = searchParams.get("ano") || undefined;
+interface CheckoutPageProps {
+  searchParams: { [key: string]: string | undefined };
+}
+
+export default function CheckoutPage({ searchParams }: CheckoutPageProps) {
+  const productId = searchParams.productId;
+  const ano = searchParams.ano;
 
   const [produto, setProduto] = useState<Produto | null>(null);
   const [mounted, setMounted] = useState(false);

@@ -1,17 +1,9 @@
+// src/app/Checkout/CheckoutForm.tsx
 "use client";
 
-import { useState } from "react";
-
-interface Produto {
-  id: string;
-  titulo: string;
-  modelo?: string;
-  ano?: string[];
-  images: string[];
-  fullPrice: string;
-  price: string;
-  anoSelecionado?: string | null;
-}
+import { useState, useRef } from "react";
+import InputMask from "react-input-mask";
+import { Produto } from "./page";
 
 interface Frete {
   Codigo: string;
@@ -30,62 +22,31 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
   const [cep, setCep] = useState("");
   const [cpfErro, setCpfErro] = useState(false);
   const [cepErro, setCepErro] = useState(false);
-
   const [fretes, setFretes] = useState<Frete[]>([]);
   const [shippingMethod, setShippingMethod] = useState("");
   const [loadingFrete, setLoadingFrete] = useState(false);
+  const btnConfirmRef = useRef<HTMLButtonElement>(null);
 
-  // Máscara de CPF
-  const handleCpfChange = (value: string) => {
-    let v = value.replace(/\D/g, "").slice(0, 11);
-    v = v.replace(/(\d{3})(\d)/, "$1.$2");
-    v = v.replace(/(\d{3})(\d)/, "$1.$2");
-    v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-    setCpf(v);
-    if (cpfErro) setCpfErro(false);
-  };
-
-  // Máscara de CEP
-  const handleCepChange = (value: string) => {
-    let v = value.replace(/\D/g, "").slice(0, 8);
-    v = v.replace(/(\d{5})(\d)/, "$1-$2");
-    setCep(v);
-    if (cepErro) setCepErro(false);
-  };
-
-  // Validação CPF
-  const validarCPF = (cpf: string) => {
-    const cleanCpf = cpf.replace(/\D/g, "");
-    if (cleanCpf.length !== 11 || /^(\d)\1+$/.test(cleanCpf)) return false;
-
-    let sum = 0;
-    let rest;
-
-    for (let i = 1; i <= 9; i++) sum += parseInt(cleanCpf.substring(i - 1, i)) * (11 - i);
-    rest = (sum * 10) % 11;
-    if (rest === 10 || rest === 11) rest = 0;
-    if (rest !== parseInt(cleanCpf.substring(9, 10))) return false;
-
-    sum = 0;
-    for (let i = 1; i <= 10; i++) sum += parseInt(cleanCpf.substring(i - 1, i)) * (12 - i);
-    rest = (sum * 10) % 11;
-    if (rest === 10 || rest === 11) rest = 0;
-    if (rest !== parseInt(cleanCpf.substring(10, 11))) return false;
-
+  const validarCPF = (value: string) => {
+    const cleanCpf = value.replace(/\D/g, "");
+    if (cleanCpf.length !== 11) return false;
+    if (/^(\d)\1+$/.test(cleanCpf)) return false;
     return true;
   };
 
-  const validarCEP = (cep: string) => /^\d{5}-?\d{3}$/.test(cep);
+  const validarCEP = (value: string) => {
+    const cleanCep = value.replace(/\D/g, "");
+    return cleanCep.length === 8;
+  };
 
-  // Consulta frete via API
   const consultarFrete = async () => {
     if (!validarCEP(cep)) {
       setCepErro(true);
-      alert("CEP inválido");
       return;
     }
-
+    setCepErro(false);
     setLoadingFrete(true);
+
     try {
       const res = await fetch("/api/correios", {
         method: "POST",
@@ -98,119 +59,173 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
         setFretes([]);
       } else setFretes(data.Servicos || []);
     } catch (err) {
-      console.error(err);
-      alert("Erro ao consultar frete");
+      console.error("Erro ao consultar frete:", err);
       setFretes([]);
     } finally {
       setLoadingFrete(false);
     }
   };
 
-  const handleConfirmarCompra = () => {
-    if (!nome || !email || !cpf || !shippingMethod) {
-      alert("Preencha todos os campos e escolha o frete");
-      return;
-    }
-
+  const handleConfirmarCompra = async () => {
+    if (!nome || !email || !cpf || !shippingMethod) return;
     if (!validarCPF(cpf)) {
       setCpfErro(true);
       return;
     }
 
-    if (shippingMethod !== "retirada" && !validarCEP(cep)) {
-      setCepErro(true);
-      return;
+    let valorFrete = "0,00";
+    if (shippingMethod !== "retirada") {
+      const freteSelecionado = fretes.find((f) => f.Codigo === shippingMethod);
+      if (!freteSelecionado) return alert("Frete inválido");
+      valorFrete = freteSelecionado.Valor;
     }
 
-    alert("Tudo certo! Pode prosseguir com a compra.");
-    // Aqui você chamaria a API do Stripe
+    try {
+      const res = await fetch("/api/checkout_sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer: { nome, email, cpf },
+          items: [
+            {
+              id: produto.id,
+              name: produto.titulo,
+              price: produto.price,
+              quantity: 1,
+              ano: produto.anoSelecionado,
+              images: produto.images,
+            },
+          ],
+          shipping: {
+            method: shippingMethod,
+            valor: valorFrete,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else alert("Erro ao criar sessão de pagamento");
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao processar pagamento");
+    }
   };
 
+  const isButtonDisabled =
+    !nome ||
+    !email ||
+    !cpf ||
+    !validarCPF(cpf) ||
+    !cep ||
+    !validarCEP(cep) ||
+    !shippingMethod;
+
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-50 p-6">
-      <div className="flex flex-col w-full max-w-md bg-white rounded-lg shadow-md p-8 gap-4">
-        <h2 className="text-2xl font-bold text-center">{produto.titulo}</h2>
-        <p className="text-gray-600 text-center">Modelo: {produto.modelo || "Não informado"}</p>
-        <p className="text-2xl font-semibold text-green-700 text-center">{produto.price}</p>
+    <div className="flex flex-col w-full max-w-md bg-white rounded-lg shadow-md p-8 gap-4">
+      <h2 className="text-2xl font-bold text-center">{produto.titulo}</h2>
+      <p className="text-gray-600 text-center">Ano: {produto.anoSelecionado}</p>
+      <p className="text-2xl font-semibold text-green-700 text-center">{produto.price}</p>
 
-        <input
-          type="text"
-          placeholder="Nome completo"
-          value={nome}
-          onChange={(e) => setNome(e.target.value)}
-          className="border-b-2 border-gray-300 focus:border-green-500 p-2 outline-none w-full text-center"
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="border-b-2 border-gray-300 focus:border-green-500 p-2 outline-none w-full text-center"
-        />
-        <input
-          type="text"
-          placeholder="CPF"
-          value={cpf}
-          onChange={(e) => handleCpfChange(e.target.value)}
-          className={`border-b-2 p-2 outline-none w-full text-center ${
-            cpfErro ? "border-red-600" : "border-gray-300 focus:border-green-500"
-          }`}
-        />
-        {cpfErro && <p className="text-red-600 text-sm text-center">CPF inválido</p>}
+      <input
+        type="text"
+        placeholder="Nome completo"
+        value={nome}
+        onChange={(e) => setNome(e.target.value)}
+        className="border-b-2 border-gray-300 focus:border-green-500 p-2 outline-none w-full text-center"
+      />
+      <input
+        type="email"
+        placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className="border-b-2 border-gray-300 focus:border-green-500 p-2 outline-none w-full text-center"
+      />
+      <InputMask
+        mask="999.999.999-99"
+        value={cpf}
+        onChange={(e) => {
+          setCpf(e.target.value);
+          if (cpfErro) setCpfErro(false);
+        }}
+      >
+        {(inputProps: any) => (
+          <input
+            {...inputProps}
+            type="text"
+            placeholder="CPF"
+            className={`border-b-2 p-2 outline-none w-full text-center ${
+              cpfErro ? "border-red-600" : "border-gray-300 focus:border-green-500"
+            }`}
+          />
+        )}
+      </InputMask>
+      {cpfErro && <p className="text-red-600 text-sm text-center">CPF inválido</p>}
 
-        <input
-          type="text"
-          placeholder="CEP"
-          value={cep}
-          onChange={(e) => handleCepChange(e.target.value)}
-          className={`border-b-2 p-2 outline-none w-full text-center ${
-            cepErro ? "border-red-600" : "border-gray-300 focus:border-green-500"
-          }`}
-        />
+      <InputMask
+        mask="99999-999"
+        value={cep}
+        onChange={(e) => {
+          setCep(e.target.value);
+          if (cepErro) setCepErro(false);
+        }}
+      >
+        {(inputProps: any) => (
+          <input
+            {...inputProps}
+            type="text"
+            placeholder="CEP"
+            className={`border-b-2 p-2 outline-none w-full text-center ${
+              cepErro ? "border-red-600" : "border-gray-300 focus:border-green-500"
+            }`}
+          />
+        )}
+      </InputMask>
 
-        <button
-          onClick={consultarFrete}
-          className="bg-blue-600 text-white py-2 rounded mt-2 w-full"
-        >
-          {loadingFrete ? "Consultando..." : "Calcular Frete"}
-        </button>
+      <button
+        onClick={consultarFrete}
+        disabled={!validarCEP(cep) || loadingFrete}
+        className="bg-blue-600 text-white py-2 rounded mt-2 w-full disabled:opacity-50"
+      >
+        {loadingFrete ? "Consultando..." : "Calcular Frete"}
+      </button>
 
-        <div className="flex flex-col gap-2 mt-2 w-full">
-          <label className="flex items-center gap-2 border p-2 rounded cursor-pointer justify-center">
+      <div className="flex flex-col gap-2 mt-2 w-full">
+        <label className="flex items-center gap-2 border p-2 rounded cursor-pointer justify-center">
+          <input
+            type="radio"
+            name="frete"
+            value="retirada"
+            checked={shippingMethod === "retirada"}
+            onChange={() => setShippingMethod("retirada")}
+          />
+          Retirada na Loja (Grátis)
+        </label>
+
+        {fretes.map((f) => (
+          <label
+            key={f.Codigo}
+            className="flex items-center gap-2 border p-2 rounded cursor-pointer justify-center"
+          >
             <input
               type="radio"
               name="frete"
-              value="retirada"
-              checked={shippingMethod === "retirada"}
-              onChange={() => setShippingMethod("retirada")}
+              value={f.Codigo}
+              checked={shippingMethod === f.Codigo}
+              onChange={() => setShippingMethod(f.Codigo)}
             />
-            Retirada na Loja (Grátis)
+            {f.Codigo === "04014" ? "Sedex" : "PAC"} - R${f.Valor} - {f.PrazoEntrega} dias
           </label>
-
-          {fretes.map((f) => (
-            <label
-              key={f.Codigo}
-              className="flex items-center gap-2 border p-2 rounded cursor-pointer justify-center"
-            >
-              <input
-                type="radio"
-                name="frete"
-                value={f.Codigo}
-                checked={shippingMethod === f.Codigo}
-                onChange={() => setShippingMethod(f.Codigo)}
-              />
-              {f.Codigo === "04014" ? "Sedex" : "PAC"} - R${f.Valor} - {f.PrazoEntrega} dias
-            </label>
-          ))}
-        </div>
-
-        <button
-          onClick={handleConfirmarCompra}
-          className="bg-green-600 text-white py-2 rounded mt-4 w-full"
-        >
-          Confirmar Compra
-        </button>
+        ))}
       </div>
+
+      <button
+        ref={btnConfirmRef}
+        onClick={handleConfirmarCompra}
+        disabled={isButtonDisabled}
+        className="bg-green-600 text-white py-2 rounded mt-4 w-full disabled:opacity-50"
+      >
+        Confirmar Compra
+      </button>
     </div>
   );
 }

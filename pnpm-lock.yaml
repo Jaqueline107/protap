@@ -81,8 +81,8 @@ importers:
         specifier: ^5.3.0
         version: 5.5.0(react@19.0.0-rc-02c0e824-20241028)
       react-input-mask:
-        specifier: ^2.0.4
-        version: 2.0.4(react-dom@19.0.0-rc-02c0e824-20241028(react@19.0.0-rc-02c0e824-20241028))(react@19.0.0-rc-02c0e824-20241028)
+        specifier: 3.0.0-alpha.2
+        version: 3.0.0-alpha.2(react-dom@19.0.0-rc-02c0e824-20241028(react@19.0.0-rc-02c0e824-20241028))(react@19.0.0-rc-02c0e824-20241028)
       stripe:
         specifier: ^18.5.0
         version: 18.5.0(@types/node@20.19.11)
@@ -3093,11 +3093,11 @@ packages:
     peerDependencies:
       react: '*'
 
-  react-input-mask@2.0.4:
-    resolution: {integrity: sha512-1hwzMr/aO9tXfiroiVCx5EtKohKwLk/NT8QlJXHQ4N+yJJFyUuMT+zfTpLBwX/lK3PkuMlievIffncpMZ3HGRQ==}
+  react-input-mask@3.0.0-alpha.2:
+    resolution: {integrity: sha512-9U7qL+mvDMOJcbOFPdt6Vj+zzmCMNnBjhhjGDrL8BGQmymgvMVKhu/oOVfAkl+5VWOsLr+G3EhZOmae5fBcAkA==}
     peerDependencies:
-      react: '>=0.14.0'
-      react-dom: '>=0.14.0'
+      react: '>=16.8'
+      react-dom: '>=16.8'
 
   react-is@16.13.1:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
@@ -6668,9 +6668,10 @@ snapshots:
     dependencies:
       react: 19.0.0-rc-02c0e824-20241028
 
-  react-input-mask@2.0.4(react-dom@19.0.0-rc-02c0e824-20241028(react@19.0.0-rc-02c0e824-20241028))(react@19.0.0-rc-02c0e824-20241028):
+  react-input-mask@3.0.0-alpha.2(react-dom@19.0.0-rc-02c0e824-20241028(react@19.0.0-rc-02c0e824-20241028))(react@19.0.0-rc-02c0e824-20241028):
     dependencies:
       invariant: 2.2.4
+      prop-types: 15.8.1
       react: 19.0.0-rc-02c0e824-20241028
       react-dom: 19.0.0-rc-02c0e824-20241028(react@19.0.0-rc-02c0e824-20241028)
       warning: 4.0.3
