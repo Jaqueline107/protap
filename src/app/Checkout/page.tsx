@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../db/firebase";
-import CheckoutForm from "./CheckoutForm";
+import CheckoutForm from "./CheckoutClient";
 
 interface Produto {
   id: string;
