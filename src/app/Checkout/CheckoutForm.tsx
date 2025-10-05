@@ -149,12 +149,12 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
       <InputMask
         mask="999.999.999-99"
         value={cpf}
-        onChange={(e) => {
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
           setCpf(e.target.value);
           if (cpfErro) setCpfErro(false);
         }}
       >
-        {(inputProps: any) => (
+        {(inputProps: React.InputHTMLAttributes<HTMLInputElement>) => (
           <input
             {...inputProps}
             type="text"
@@ -171,12 +171,12 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
       <InputMask
         mask="99999-999"
         value={cep}
-        onChange={(e) => {
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
           setCep(e.target.value);
           if (cepErro) setCepErro(false);
         }}
       >
-        {(inputProps: any) => (
+        {(inputProps: React.InputHTMLAttributes<HTMLInputElement>) => (
           <input
             {...inputProps}
             type="text"

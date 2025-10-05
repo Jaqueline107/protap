@@ -1,4 +1,3 @@
-// src/app/Checkout/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -17,25 +16,33 @@ export interface Produto {
   anoSelecionado?: string | null;
 }
 
+// ✅ O tipo correto de `searchParams` agora é Promise<Record<string, string | undefined>>
 interface CheckoutPageProps {
-  searchParams: { [key: string]: string | undefined };
+  searchParams: Promise<Record<string, string | undefined>>;
 }
 
 export default function CheckoutPage({ searchParams }: CheckoutPageProps) {
-  const productId = searchParams.productId;
-  const ano = searchParams.ano;
-
   const [produto, setProduto] = useState<Produto | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [params, setParams] = useState<Record<string, string | undefined>>({});
+
+  // ✅ Resolve o searchParams (que é uma Promise agora)
+  useEffect(() => {
+    async function resolveParams() {
+      const resolved = await searchParams;
+      setParams(resolved);
+    }
+    resolveParams();
+  }, [searchParams]);
 
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    if (!mounted || !productId) return;
+    if (!mounted || !params.productId) return;
 
     const fetchProduct = async () => {
       try {
-        const docRef = doc(db, "produtos", productId);
+        const docRef = doc(db, "produtos", params.productId!);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
@@ -53,18 +60,18 @@ export default function CheckoutPage({ searchParams }: CheckoutPageProps) {
             id: docSnap.id,
             ...data,
             price: `R$${price.replace(".", ",")}`,
-            anoSelecionado: ano || (data.ano ? data.ano[0] : null),
+            anoSelecionado: params.ano || (data.ano ? data.ano[0] : null),
           });
         } else {
           console.error("Produto não encontrado");
         }
       } catch (err) {
-        console.error(err);
+        console.error("Erro ao buscar produto:", err);
       }
     };
 
     fetchProduct();
-  }, [mounted, productId, ano]);
+  }, [mounted, params]);
 
   if (!mounted) return null;
   if (!produto) return <p className="p-8 text-center">Carregando produto...</p>;
