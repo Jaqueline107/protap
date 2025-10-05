@@ -1,25 +1,27 @@
 import { NextResponse } from "next/server";
 import { calcularPrecoPrazo } from "correios-brasil";
 
-// Valores de fallback configuráveis
-const fallbackFrete = {
-  PAC: { prazo: "5-10 dias úteis", valor: "R$ 30,00" },
-  SEDEX: { prazo: "2-5 dias úteis", valor: "R$ 60,00" },
-};
-
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { cepDestino, peso, comprimento, altura, largura } = body;
+    const { cepDestino } = body;
 
+    if (!cepDestino) {
+      return NextResponse.json(
+        { error: "CEP de destino é obrigatório" },
+        { status: 400 }
+      );
+    }
+
+    // Configurações padrão do pacote
     const args = {
-      sCepOrigem: "01001-000", // ajuste para seu CEP de origem
+      sCepOrigem: "01001-000", // 👉 Altere para o CEP da sua loja
       sCepDestino: cepDestino,
-      nVlPeso: peso || "1",
+      nVlPeso: "1",
       nCdFormato: "1",
-      nVlComprimento: comprimento || "20",
-      nVlAltura: altura || "20",
-      nVlLargura: largura || "20",
+      nVlComprimento: "20",
+      nVlAltura: "20",
+      nVlLargura: "20",
       nVlDiametro: "0",
       sCdMaoPropria: "N",
       nVlValorDeclarado: "0",
@@ -27,19 +29,27 @@ export async function POST(req: Request) {
       nCdServico: ["04014", "04510"], // SEDEX e PAC
     };
 
+    // Consulta oficial dos Correios
     const resultado = await calcularPrecoPrazo(args);
 
-    return NextResponse.json({ sucesso: true, dados: resultado });
+    // Padroniza saída para o CheckoutForm
+    return NextResponse.json({
+      Servicos: resultado.map((servico: any) => ({
+        Codigo: servico.Codigo,
+        Valor: servico.Valor,
+        PrazoEntrega: servico.PrazoEntrega,
+      })),
+    });
   } catch (err: unknown) {
     console.error("Erro ao consultar Correios:", err);
 
-    return NextResponse.json(
-      {
-        sucesso: false,
-        erro: "Serviço dos Correios indisponível. Usando valores estimados.",
-        estimativa: fallbackFrete,
-      },
-      { status: 503 }
-    );
+    // Fallback em caso de erro (mantém loja funcional)
+    return NextResponse.json({
+      Servicos: [
+        { Codigo: "04014", Valor: "60,00", PrazoEntrega: "5" }, // SEDEX
+        { Codigo: "04510", Valor: "30,00", PrazoEntrega: "10" }, // PAC
+      ],
+      error: "Serviço dos Correios indisponível — exibindo valores estimados.",
+    });
   }
 }

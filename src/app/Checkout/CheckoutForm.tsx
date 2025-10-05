@@ -1,7 +1,6 @@
-// src/app/Checkout/CheckoutForm.tsx
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import InputMask from "react-input-mask";
 import { Produto } from "./page";
 
@@ -25,8 +24,8 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
   const [fretes, setFretes] = useState<Frete[]>([]);
   const [shippingMethod, setShippingMethod] = useState("");
   const [loadingFrete, setLoadingFrete] = useState(false);
-  const btnConfirmRef = useRef<HTMLButtonElement>(null);
 
+  // --- Validação CPF e CEP ---
   const validarCPF = (value: string) => {
     const cleanCpf = value.replace(/\D/g, "");
     if (cleanCpf.length !== 11) return false;
@@ -39,6 +38,7 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
     return cleanCep.length === 8;
   };
 
+  // --- Consultar frete ---
   const consultarFrete = async () => {
     if (!validarCEP(cep)) {
       setCepErro(true);
@@ -57,7 +57,9 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
       if (data.error) {
         alert(data.error);
         setFretes([]);
-      } else setFretes(data.Servicos || []);
+      } else {
+        setFretes(data.Servicos || []);
+      }
     } catch (err) {
       console.error("Erro ao consultar frete:", err);
       setFretes([]);
@@ -66,6 +68,7 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
     }
   };
 
+  // --- Confirmar compra ---
   const handleConfirmarCompra = async () => {
     if (!nome || !email || !cpf || !shippingMethod) return;
     if (!validarCPF(cpf)) {
@@ -102,6 +105,7 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
           },
         }),
       });
+
       const data = await res.json();
       if (data.url) window.location.href = data.url;
       else alert("Erro ao criar sessão de pagamento");
@@ -120,12 +124,14 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
     !validarCEP(cep) ||
     !shippingMethod;
 
+  // --- Renderização ---
   return (
     <div className="flex flex-col w-full max-w-md bg-white rounded-lg shadow-md p-8 gap-4">
       <h2 className="text-2xl font-bold text-center">{produto.titulo}</h2>
       <p className="text-gray-600 text-center">Ano: {produto.anoSelecionado}</p>
       <p className="text-2xl font-semibold text-green-700 text-center">{produto.price}</p>
 
+      {/* Campos de dados pessoais */}
       <input
         type="text"
         placeholder="Nome completo"
@@ -161,6 +167,7 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
       </InputMask>
       {cpfErro && <p className="text-red-600 text-sm text-center">CPF inválido</p>}
 
+      {/* CEP e frete */}
       <InputMask
         mask="99999-999"
         value={cep}
@@ -189,6 +196,7 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
         {loadingFrete ? "Consultando..." : "Calcular Frete"}
       </button>
 
+      {/* Métodos de envio */}
       <div className="flex flex-col gap-2 mt-2 w-full">
         <label className="flex items-center gap-2 border p-2 rounded cursor-pointer justify-center">
           <input
@@ -218,8 +226,8 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
         ))}
       </div>
 
+      {/* Botão confirmar compra */}
       <button
-        ref={btnConfirmRef}
         onClick={handleConfirmarCompra}
         disabled={isButtonDisabled}
         className="bg-green-600 text-white py-2 rounded mt-4 w-full disabled:opacity-50"

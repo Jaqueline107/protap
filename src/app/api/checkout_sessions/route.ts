@@ -10,7 +10,6 @@ const stripe = new Stripe(stripeSecretKey, {
   apiVersion: "2025-08-27.basil",
 });
 
-// Tipagem do item do carrinho
 interface CartItem {
   name: string;
   price: string; // Ex: "R$50,00"
@@ -19,12 +18,11 @@ interface CartItem {
   ano?: string | null;
 }
 
-// Corpo da requisição
 interface CheckoutRequestBody {
   items: CartItem[];
   shipping?: {
     method: string; // "04014", "04510" ou "retirada"
-    valor: string;  // Ex: "25,30" ou "0,00" para retirada
+    valor: string;  // Ex: "25,30" ou "0,00"
   };
 }
 
@@ -56,6 +54,7 @@ export async function POST(req: Request) {
       quantity: item.quantity,
     }));
 
+    // Adiciona o frete se não for retirada
     if (shipping && shipping.valor) {
       const freteNome =
         shipping.method === "04014"
@@ -75,7 +74,6 @@ export async function POST(req: Request) {
     }
 
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
       mode: "payment",
       line_items: lineItems,
       success_url: `${publicUrl}/success`,
