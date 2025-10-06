@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import InputMask from "react-input-mask";
-import { Produto } from "./page";
+import { Produto } from "../types/produto";
 
 interface Frete {
   Codigo: string;
@@ -25,7 +24,6 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
   const [shippingMethod, setShippingMethod] = useState("");
   const [loadingFrete, setLoadingFrete] = useState(false);
 
-  // --- Validação CPF e CEP ---
   const validarCPF = (value: string) => {
     const cleanCpf = value.replace(/\D/g, "");
     if (cleanCpf.length !== 11) return false;
@@ -38,7 +36,6 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
     return cleanCep.length === 8;
   };
 
-  // --- Consultar frete ---
   const consultarFrete = async () => {
     if (!validarCEP(cep)) {
       setCepErro(true);
@@ -68,11 +65,16 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
     }
   };
 
-  // --- Confirmar compra ---
   const handleConfirmarCompra = async () => {
     if (!nome || !email || !cpf || !shippingMethod) return;
+
     if (!validarCPF(cpf)) {
       setCpfErro(true);
+      return;
+    }
+
+    if (!validarCEP(cep)) {
+      setCepErro(true);
       return;
     }
 
@@ -124,116 +126,124 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
     !validarCEP(cep) ||
     !shippingMethod;
 
-  // --- Renderização ---
   return (
-    <div className="flex flex-col w-full max-w-md bg-white rounded-lg shadow-md p-8 gap-4">
-      <h2 className="text-2xl font-bold text-center">{produto.titulo}</h2>
-      <p className="text-gray-600 text-center">Ano: {produto.anoSelecionado}</p>
-      <p className="text-2xl font-semibold text-green-700 text-center">{produto.price}</p>
+    <div className="flex justify-center items-center min-h-screen bg-gray-100 p-4">
+      <div className="flex flex-col w-full max-w-lg sm:max-w-md bg-white rounded-lg shadow-md p-6 sm:p-8 gap-4">
+        <h2 className="text-2xl font-bold text-center">{produto.titulo}</h2>
+        <p className="text-gray-600 text-center">Ano: {produto.anoSelecionado}</p>
+        <p className="text-2xl font-semibold text-green-700 text-center">
+          {produto.price}
+        </p>
 
-      {/* Campos de dados pessoais */}
-      <input
-        type="text"
-        placeholder="Nome completo"
-        value={nome}
-        onChange={(e) => setNome(e.target.value)}
-        className="border-b-2 border-gray-300 focus:border-green-500 p-2 outline-none w-full text-center"
-      />
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className="border-b-2 border-gray-300 focus:border-green-500 p-2 outline-none w-full text-center"
-      />
-      <InputMask
-        mask="999.999.999-99"
-        value={cpf}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-          setCpf(e.target.value);
-          if (cpfErro) setCpfErro(false);
-        }}
-      >
-        {(inputProps: React.InputHTMLAttributes<HTMLInputElement>) => (
-          <input
-            {...inputProps}
-            type="text"
-            placeholder="CPF"
-            className={`border-b-2 p-2 outline-none w-full text-center ${
-              cpfErro ? "border-red-600" : "border-gray-300 focus:border-green-500"
-            }`}
-          />
+        <input
+          type="text"
+          placeholder="Nome completo"
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+          className="border-b-2 border-gray-300 focus:border-green-500 p-2 outline-none w-full text-center"
+        />
+
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="border-b-2 border-gray-300 focus:border-green-500 p-2 outline-none w-full text-center"
+        />
+
+        <input
+          type="text"
+          placeholder="CPF"
+          value={cpf}
+          onChange={(e) => {
+            const v = e.target.value
+              .replace(/\D/g, "")
+              .replace(/(\d{3})(\d)/, "$1.$2")
+              .replace(/(\d{3})(\d)/, "$1.$2")
+              .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+            setCpf(v);
+            if (cpfErro) setCpfErro(false);
+          }}
+          maxLength={14}
+          className={`border-b-2 p-2 outline-none w-full text-center ${
+            cpfErro
+              ? "border-red-600"
+              : "border-gray-300 focus:border-green-500"
+          }`}
+        />
+        {cpfErro && (
+          <p className="text-red-600 text-sm text-center">CPF inválido</p>
         )}
-      </InputMask>
-      {cpfErro && <p className="text-red-600 text-sm text-center">CPF inválido</p>}
 
-      {/* CEP e frete */}
-      <InputMask
-        mask="99999-999"
-        value={cep}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-          setCep(e.target.value);
-          if (cepErro) setCepErro(false);
-        }}
-      >
-        {(inputProps: React.InputHTMLAttributes<HTMLInputElement>) => (
-          <input
-            {...inputProps}
-            type="text"
-            placeholder="CEP"
-            className={`border-b-2 p-2 outline-none w-full text-center ${
-              cepErro ? "border-red-600" : "border-gray-300 focus:border-green-500"
-            }`}
-          />
+        <input
+          type="text"
+          placeholder="CEP"
+          value={cep}
+          onChange={(e) => {
+            const v = e.target.value
+              .replace(/\D/g, "")
+              .replace(/(\d{5})(\d)/, "$1-$2")
+              .slice(0, 9);
+            setCep(v);
+            if (cepErro) setCepErro(false);
+          }}
+          maxLength={9}
+          className={`border-b-2 p-2 outline-none w-full text-center ${
+            cepErro
+              ? "border-red-600"
+              : "border-gray-300 focus:border-green-500"
+          }`}
+        />
+        {cepErro && (
+          <p className="text-red-600 text-sm text-center">CEP inválido</p>
         )}
-      </InputMask>
 
-      <button
-        onClick={consultarFrete}
-        disabled={!validarCEP(cep) || loadingFrete}
-        className="bg-blue-600 text-white py-2 rounded mt-2 w-full disabled:opacity-50"
-      >
-        {loadingFrete ? "Consultando..." : "Calcular Frete"}
-      </button>
+        <button
+          onClick={consultarFrete}
+          disabled={!validarCEP(cep) || loadingFrete}
+          className="bg-blue-600 text-white py-2 rounded mt-2 w-full disabled:opacity-50"
+        >
+          {loadingFrete ? "Consultando..." : "Calcular Frete"}
+        </button>
 
-      {/* Métodos de envio */}
-      <div className="flex flex-col gap-2 mt-2 w-full">
-        <label className="flex items-center gap-2 border p-2 rounded cursor-pointer justify-center">
-          <input
-            type="radio"
-            name="frete"
-            value="retirada"
-            checked={shippingMethod === "retirada"}
-            onChange={() => setShippingMethod("retirada")}
-          />
-          Retirada na Loja (Grátis)
-        </label>
-
-        {fretes.map((f) => (
-          <label
-            key={f.Codigo}
-            className="flex items-center gap-2 border p-2 rounded cursor-pointer justify-center"
-          >
+        <div className="flex flex-col gap-2 mt-2 w-full">
+          <label className="flex items-center gap-2 border p-2 rounded cursor-pointer justify-center">
             <input
               type="radio"
               name="frete"
-              value={f.Codigo}
-              checked={shippingMethod === f.Codigo}
-              onChange={() => setShippingMethod(f.Codigo)}
+              value="retirada"
+              checked={shippingMethod === "retirada"}
+              onChange={() => setShippingMethod("retirada")}
             />
-            {f.Codigo === "04014" ? "Sedex" : "PAC"} - R${f.Valor} - {f.PrazoEntrega} dias
+            Retirada na Loja (Grátis)
           </label>
-        ))}
-      </div>
 
-      {/* Botão confirmar compra */}
-      <button
-        onClick={handleConfirmarCompra}
-        disabled={isButtonDisabled}
-        className="bg-green-600 text-white py-2 rounded mt-4 w-full disabled:opacity-50"
-      >
-        Confirmar Compra
-      </button>
+          {fretes.map((f) => (
+            <label
+              key={f.Codigo}
+              className="flex items-center gap-2 border p-2 rounded cursor-pointer justify-center"
+            >
+              <input
+                type="radio"
+                name="frete"
+                value={f.Codigo}
+                checked={shippingMethod === f.Codigo}
+                onChange={() => setShippingMethod(f.Codigo)}
+              />
+              {f.Codigo === "04014" ? "Sedex" : "PAC"} - R${f.Valor} -{" "}
+              {f.PrazoEntrega} dias
+            </label>
+          ))}
+        </div>
+
+        <button
+          onClick={handleConfirmarCompra}
+          disabled={isButtonDisabled}
+          className="bg-green-600 text-white py-2 rounded mt-4 w-full disabled:opacity-50"
+        >
+          Confirmar Compra
+        </button>
+      </div>
     </div>
   );
 }
