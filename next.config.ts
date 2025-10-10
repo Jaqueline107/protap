@@ -2,12 +2,17 @@
 const nextConfig = {
   reactStrictMode: true,
   eslint: {
-    // Ignora erros de ESLint durante o build (útil para deploy na Vercel)
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: true, // Ignora erros de ESLint durante build
   },
   images: {
-    // Permite carregar imagens de usuários do Google
-    domains: ["lh3.googleusercontent.com"],
+    domains: [
+      "lh3.googleusercontent.com", // Para avatars do Google
+      "via.placeholder.com",       // Caso queira imagens placeholder
+    ],
+    formats: ["image/avif", "image/webp"], // Otimização automática de formatos
+  },
+  experimental: {
+    appDir: true, // Certifica que App Router está ativado
   },
 };
 
