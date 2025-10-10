@@ -31,6 +31,14 @@ export default function AdminPage() {
   // --- Verifica login e permissões admin ---
   useEffect(() => {
     const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (user) {
+      user.getIdToken(true) // força atualização das claims
+        .then((token) => console.log("Token atualizado:", token))
+        .catch((err) => console.error("Erro ao atualizar token:", err));
+    }
+
     const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
