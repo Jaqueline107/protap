@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Produto } from "../types/produto";
+import type { Produto } from "../types/produto";
 
 interface Frete {
   Codigo: string;
@@ -20,6 +20,7 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
   const [cep, setCep] = useState("");
   const [cpfErro, setCpfErro] = useState(false);
   const [cepErro, setCepErro] = useState(false);
+  const [emailErro, setEmailErro] = useState(false);
   const [fretes, setFretes] = useState<Frete[]>([]);
   const [shippingMethod, setShippingMethod] = useState("");
   const [loadingFrete, setLoadingFrete] = useState(false);
@@ -34,6 +35,11 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
   const validarCEP = (value: string) => {
     const cleanCep = value.replace(/\D/g, "");
     return cleanCep.length === 8;
+  };
+
+  const validarEmail = (value: string) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(value.toLowerCase());
   };
 
   const consultarFrete = async () => {
@@ -67,6 +73,11 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
 
   const handleConfirmarCompra = async () => {
     if (!nome || !email || !cpf || !shippingMethod) return;
+
+    if (!validarEmail(email)) {
+      setEmailErro(true);
+      return;
+    }
 
     if (!validarCPF(cpf)) {
       setCpfErro(true);
@@ -120,6 +131,7 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
   const isButtonDisabled =
     !nome ||
     !email ||
+    !validarEmail(email) ||
     !cpf ||
     !validarCPF(cpf) ||
     !cep ||
@@ -127,29 +139,43 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
     !shippingMethod;
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100 p-4">
-      <div className="flex flex-col w-full max-w-lg sm:max-w-md bg-white rounded-lg shadow-md p-6 sm:p-8 gap-4">
-        <h2 className="text-2xl font-bold text-center">{produto.titulo}</h2>
+    <div className="flex justify-center items-center min-h-screen bg-gradient-to-b from-gray-100 to-gray-200 p-4">
+      <div className="flex flex-col w-full max-w-lg sm:max-w-md bg-white rounded-xl shadow-xl p-6 sm:p-8 gap-5 transition-transform transform hover:scale-105">
+        <h2 className="text-3xl font-bold text-center text-gray-800">
+          {produto.titulo}
+        </h2>
         <p className="text-gray-600 text-center">Ano: {produto.anoSelecionado}</p>
-        <p className="text-2xl font-semibold text-green-700 text-center">
+        <p className="text-2xl font-semibold text-green-600 text-center">
           {produto.price}
         </p>
 
+        {/* Inputs animados */}
         <input
           type="text"
           placeholder="Nome completo"
           value={nome}
           onChange={(e) => setNome(e.target.value)}
-          className="border-b-2 border-gray-300 focus:border-green-500 p-2 outline-none w-full text-center"
+          className="border-b-2 border-gray-300 focus:border-green-500 p-2 outline-none w-full text-center transition-all duration-300 hover:shadow-sm"
         />
 
         <input
           type="email"
           placeholder="Email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="border-b-2 border-gray-300 focus:border-green-500 p-2 outline-none w-full text-center"
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (emailErro) setEmailErro(false);
+          }}
+          onBlur={() => {
+            if (!validarEmail(email)) setEmailErro(true);
+          }}
+          className={`border-b-2 p-2 outline-none w-full text-center transition-all duration-300 hover:shadow-sm ${
+            emailErro ? "border-red-600" : "border-gray-300 focus:border-green-500"
+          }`}
         />
+        {emailErro && (
+          <p className="text-red-600 text-sm text-center">Email inválido</p>
+        )}
 
         <input
           type="text"
@@ -165,10 +191,8 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
             if (cpfErro) setCpfErro(false);
           }}
           maxLength={14}
-          className={`border-b-2 p-2 outline-none w-full text-center ${
-            cpfErro
-              ? "border-red-600"
-              : "border-gray-300 focus:border-green-500"
+          className={`border-b-2 p-2 outline-none w-full text-center transition-all duration-300 hover:shadow-sm ${
+            cpfErro ? "border-red-600" : "border-gray-300 focus:border-green-500"
           }`}
         />
         {cpfErro && (
@@ -188,26 +212,23 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
             if (cepErro) setCepErro(false);
           }}
           maxLength={9}
-          className={`border-b-2 p-2 outline-none w-full text-center ${
-            cepErro
-              ? "border-red-600"
-              : "border-gray-300 focus:border-green-500"
+          className={`border-b-2 p-2 outline-none w-full text-center transition-all duration-300 hover:shadow-sm ${
+            cepErro ? "border-red-600" : "border-gray-300 focus:border-green-500"
           }`}
         />
-        {cepErro && (
-          <p className="text-red-600 text-sm text-center">CEP inválido</p>
-        )}
+        {cepErro && <p className="text-red-600 text-sm text-center">CEP inválido</p>}
 
         <button
           onClick={consultarFrete}
           disabled={!validarCEP(cep) || loadingFrete}
-          className="bg-blue-600 text-white py-2 rounded mt-2 w-full disabled:opacity-50"
+          className="bg-blue-600 text-white py-2 rounded mt-2 w-full disabled:opacity-50 hover:bg-blue-700 transition-colors duration-300"
         >
           {loadingFrete ? "Consultando..." : "Calcular Frete"}
         </button>
 
+        {/* Frete */}
         <div className="flex flex-col gap-2 mt-2 w-full">
-          <label className="flex items-center gap-2 border p-2 rounded cursor-pointer justify-center">
+          <label className="flex items-center gap-2 border p-2 rounded cursor-pointer justify-center transition-all duration-200 hover:shadow-sm">
             <input
               type="radio"
               name="frete"
@@ -221,7 +242,7 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
           {fretes.map((f) => (
             <label
               key={f.Codigo}
-              className="flex items-center gap-2 border p-2 rounded cursor-pointer justify-center"
+              className="flex items-center gap-2 border p-2 rounded cursor-pointer justify-center transition-all duration-200 hover:shadow-sm"
             >
               <input
                 type="radio"
@@ -239,7 +260,7 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
         <button
           onClick={handleConfirmarCompra}
           disabled={isButtonDisabled}
-          className="bg-green-600 text-white py-2 rounded mt-4 w-full disabled:opacity-50"
+          className="bg-green-600 text-white py-2 rounded mt-4 w-full disabled:opacity-50 hover:bg-green-700 transition-colors duration-300"
         >
           Confirmar Compra
         </button>

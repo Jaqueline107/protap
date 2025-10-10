@@ -1,316 +1,236 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  linkWithPopup,
+  User,
+} from "firebase/auth";
 import { db } from "../../db/firebase";
-import { collection, getDocs, setDoc, doc, deleteDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
-interface Produto {
-  id: string;
+import AdminProdutosModal from "./AdminModal";
 
-  modelo: string;
-  titulo: string;
-  fullPrice: string;
-  price: string;
-  description: string;
-  images: string[];
-  ano?: string; // tratado como string no form
+interface AdminUser {
+  email: string;
+  role: "admin";
 }
 
-export default function AdminProdutosModal() {
-  const [produtos, setProdutos] = useState<Produto[]>([]);
+export default function AdminPage() {
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [formData, setFormData] = useState<Omit<Produto, "id">>({
-    modelo: "",
-    titulo: "",
-    fullPrice: "",
-    price: "",
-    description: "",
-    images: [""],
-    ano: "",
-  });
-  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const [showAddAdmin, setShowAddAdmin] = useState(false);
+  const [newAdminEmail, setNewAdminEmail] = useState("");
+  const [newAdminPassword, setNewAdminPassword] = useState("");
   const [message, setMessage] = useState("");
-  const [autorizado, setAutorizado] = useState(false);
 
-  // Proteção por senha
-  useEffect(() => {
-    const senha = prompt("Digite a senha para acessar a página:");
-    if (senha === "UnlockAdminArea") {
-      setAutorizado(true);
-    } else {
-      alert("❌ Você não tem acesso!");
-      window.location.href = "/";
-    }
-  }, []);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [showLinkGoogle, setShowLinkGoogle] = useState(false);
 
-  // Buscar produtos
+  // --- Verifica login e permissões admin ---
   useEffect(() => {
-    if (!autorizado) return;
-    const fetchProdutos = async () => {
-      setLoading(true);
-      try {
-        const snapshot = await getDocs(collection(db, "produtos"));
-        const lista = snapshot.docs.map((d) => ({
-          id: d.id,
-          ...(d.data() as Omit<Produto, "id">),
-        })) as Produto[];
-        setProdutos(lista);
-      } catch (err) {
-        console.error("Erro ao buscar produtos:", err);
-      } finally {
-        setLoading(false);
+    const auth = getAuth();
+    const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        const adminDoc = await getDoc(doc(db, "admins", currentUser.uid));
+        if (adminDoc.exists()) {
+          setIsAdmin(true);
+        } else {
+          alert("❌ Você não tem permissão de administrador!");
+          await signOut(auth);
+          router.push("/");
+        }
       }
-    };
-    fetchProdutos();
-  }, [autorizado]);
-
-  if (!autorizado) return null;
-
-  const slugify = (text: string) =>
-    text.toLowerCase().replace(/\s+/g, "-").replace(/[^\w-]+/g, "");
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleImageChange = (index: number, value: string) => {
-    const newImages = [...formData.images];
-    newImages[index] = value;
-    setFormData((prev) => ({ ...prev, images: newImages }));
-  };
-
-  const addImageField = () => {
-    setFormData((prev) => ({ ...prev, images: [...prev.images, ""] }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMessage("");
-
-    try {
-      const id = editingId || slugify(formData.modelo);
-      await setDoc(doc(db, "produtos", id), {
-        ...formData,
-        images: formData.images.filter((img) => img.trim() !== ""),
-        ano: formData.ano
-          ? formData.ano.split(",").map((a) => a.trim())
-          : [], // transforma string em array
-      });
-      setMessage(`✅ Produto ${editingId ? "editado" : "cadastrado"} com sucesso!`);
-      setFormData({
-        modelo: "",
-        titulo: "",
-        fullPrice: "",
-        price: "",
-        description: "",
-        images: [""],
-        ano: "",
-      });
-      setEditingId(null);
-      setModalOpen(false);
-      // Atualiza a lista
-      const snapshot = await getDocs(collection(db, "produtos"));
-      const lista = snapshot.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<Produto, "id">),
-      })) as Produto[];
-      setProdutos(lista);
-    } catch (err) {
-      console.error(err);
-      setMessage("❌ Erro ao salvar produto");
-    }
-  };
-
-  const handleEdit = (produto: Produto) => {
-    setEditingId(produto.id);
-    setFormData({
-      modelo: produto.modelo,
-      titulo: produto.titulo,
-      fullPrice: produto.fullPrice,
-      price: produto.price,
-      description: produto.description,
-      images: produto.images,
-      ano: Array.isArray(produto.ano) ? produto.ano.join(",") : (produto.ano || ""),
+      setLoading(false);
     });
-    setModalOpen(true);
-  };
+    return () => unsubscribe();
+  }, [router]);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir este produto?")) return;
+  // --- Login Google ---
+  const handleLoginGoogle = async () => {
+    const auth = getAuth();
+    const provider = new GoogleAuthProvider();
     try {
-      await deleteDoc(doc(db, "produtos", id));
-      setProdutos((prev) => prev.filter((p) => p.id !== id));
-      setMessage("✅ Produto excluído com sucesso!");
+      await signInWithPopup(auth, provider);
     } catch (err) {
       console.error(err);
-      setMessage("❌ Erro ao excluir produto");
+      alert("Erro ao fazer login com Google");
     }
   };
 
-  if (loading) return <p className="p-8 text-center">Carregando produtos...</p>;
+  // --- Login com email + senha ---
+  const handleLoginEmail = async () => {
+    if (!loginEmail || !loginPassword) return;
+    try {
+      const auth = getAuth();
+      const credential = await signInWithEmailAndPassword(
+        auth,
+        loginEmail,
+        loginPassword
+      );
+      const loggedUser = credential.user;
+      setUser(loggedUser);
 
+      const adminDoc = await getDoc(doc(db, "admins", loggedUser.uid));
+      if (adminDoc.exists()) {
+        setIsAdmin(true);
+        setShowLinkGoogle(true);
+      } else {
+        alert("❌ Você não tem permissão de administrador!");
+        await signOut(auth);
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Erro ao logar com email");
+    }
+  };
+
+  // --- Linkar conta Google ao email existente ---
+  const handleLinkGoogle = async () => {
+    if (!user) return;
+    const auth = getAuth();
+    const provider = new GoogleAuthProvider();
+    try {
+      await linkWithPopup(user, provider);
+      alert("✅ Conta Google vinculada com sucesso!");
+      setShowLinkGoogle(false);
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Erro ao vincular Google");
+    }
+  };
+
+  // --- Logout ---
+  const handleLogout = async () => {
+    const auth = getAuth();
+    await signOut(auth);
+    setUser(null);
+    setIsAdmin(false);
+    setShowLinkGoogle(false);
+  };
+
+  // --- Criar novo admin (só admin logado) ---
+  const handleAddAdmin = async () => {
+    if (!newAdminEmail || !newAdminPassword) {
+      alert("Preencha email e senha do novo admin");
+      return;
+    }
+    try {
+      const auth = getAuth();
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        newAdminEmail,
+        newAdminPassword
+      );
+      const newUser = userCredential.user;
+
+      await setDoc(doc(db, "admins", newUser.uid), {
+        email: newAdminEmail,
+        role: "admin",
+      });
+
+      alert(`✅ Novo admin criado: ${newAdminEmail}`);
+      setNewAdminEmail("");
+      setNewAdminPassword("");
+      setShowAddAdmin(false);
+    } catch (err: any) {
+      console.error(err);
+      setMessage(err.message || "Erro ao criar novo admin");
+    }
+  };
+
+  if (loading)
+    return <p className="text-center mt-32">Carregando...</p>;
+
+  // --- Login email caso não tenha logado ---
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <h1 className="text-2xl font-bold">Login de Administrador</h1>
+          <button
+            onClick={handleLoginGoogle}
+            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+          >
+            Google
+          </button>
+        </div>
+    );
+  }
+
+  // --- Admin logado: painel interno ---
   return (
     <div className="p-8 max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Admin Produtos</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-xl font-bold">
+          Painel de Controle
+        </h1>
 
-      <button
-        onClick={() => setModalOpen(true)}
-        className="bg-green-600 text-white px-4 py-2 rounded mb-6"
-      >
-        ➕ Adicionar Produto
-      </button>
-
-      {message && (
-        <p className={`mb-4 ${message.startsWith("✅") ? "text-green-600" : "text-red-600"}`}>
-          {message}
-        </p>
-      )}
-
-      {produtos.length === 0 ? (
-        <p>Nenhum produto cadastrado.</p>
-      ) : (
-        <div className="overflow-x-auto max-h-[500px] overflow-y-auto border border-gray-300 rounded">
-          <table className="w-full border-collapse border border-gray-300">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border p-2">Modelo</th>
-                <th className="border p-2">Título</th>
-                <th className="border p-2">Preço</th>
-                <th className="border p-2">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {produtos.map((p) => (
-                <tr key={p.id} className="text-center">
-                  <td className="border p-2">{p.modelo}</td>
-                  <td className="border p-2">{p.titulo}</td>
-                  <td className="border p-2">{p.price}</td>
-                  <td className="border p-2 flex gap-2 justify-center">
-                    <button
-                      onClick={() => handleEdit(p)}
-                      className="bg-blue-600 text-white px-3 py-1 rounded-md"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      onClick={() => handleDelete(p.id)}
-                      className="bg-red-600 text-white px-3 py-1 rounded-md"
-                    >
-                      Excluir
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {modalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto">
-          <div className="bg-white p-6 rounded-lg w-full max-w-lg relative max-h-[85vh] overflow-y-auto mt-32 shadow-lg">
-            <h2 className="text-xl font-bold mb-4">
-              {editingId ? "Editar Produto" : "Adicionar Produto"}
-            </h2>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <input
-                type="text"
-                name="modelo"
-                placeholder="Modelo"
-                value={formData.modelo}
-                onChange={handleChange}
-                required
-                className="border p-2 rounded"
-              />
-              <input
-                type="text"
-                name="titulo"
-                placeholder="Título do anúncio"
-                value={formData.titulo}
-                onChange={handleChange}
-                required
-                className="border p-2 rounded"
-              />
-              <input
-                type="text"
-                name="fullPrice"
-                placeholder="Preço original"
-                value={formData.fullPrice}
-                onChange={handleChange}
-                required
-                className="border p-2 rounded"
-              />
-              <input
-                type="text"
-                name="price"
-                placeholder="Preço promocional"
-                value={formData.price}
-                onChange={handleChange}
-                required
-                className="border p-2 rounded"
-              />
-              <textarea
-                name="description"
-                placeholder="Descrição"
-                value={formData.description}
-                onChange={handleChange}
-                required
-                className="border p-2 rounded h-24"
-              />
-              <div>
-                <label className="font-medium">Imagens (URLs)</label>
-                {formData.images.map((img, index) => (
-                  <input
-                    key={index}
-                    type="text"
-                    placeholder={`Imagem ${index + 1}`}
-                    value={img}
-                    onChange={(e) => handleImageChange(index, e.target.value)}
-                    className="border p-2 rounded w-full mt-2"
-                  />
-                ))}
+        <div className="relative">
+          <img
+            src={user.photoURL || ""}
+            alt="Avatar"
+            className="w-10 h-10 rounded-full cursor-pointer"
+            onClick={() => setShowAddAdmin((prev) => !prev)}
+          />
+          {showAddAdmin && (
+            <div className="absolute right-0 mt-2 bg-white border rounded shadow-lg p-4 flex flex-col gap-2">
+              <button
+                onClick={handleLogout}
+                className="bg-red-600 text-white px-4 py-2 rounded"
+              >
+                Sair
+              </button>
+              <div className="mt-2 flex flex-col gap-2">
+                <input
+                  type="email"
+                  placeholder="Email novo admin"
+                  value={newAdminEmail}
+                  onChange={(e) => setNewAdminEmail(e.target.value)}
+                  className="border p-2 rounded"
+                />
+                <input
+                  type="password"
+                  placeholder="Senha novo admin"
+                  value={newAdminPassword}
+                  onChange={(e) => setNewAdminPassword(e.target.value)}
+                  className="border p-2 rounded"
+                />
                 <button
-                  type="button"
-                  onClick={addImageField}
-                  className="mt-2 px-4 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                  onClick={handleAddAdmin}
+                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
                 >
-                  + Adicionar Imagem
+                  Criar Admin
                 </button>
               </div>
-              <input
-                type="text"
-                name="ano"
-                placeholder="Anos (ex: 2020,2021)"
-                value={formData.ano}
-                onChange={handleChange}
-                className="border p-2 rounded"
-              />
-              <div className="flex justify-end gap-2 mt-2">
+              {showLinkGoogle && (
                 <button
-                  type="button"
-                  onClick={() => {
-                    setModalOpen(false);
-                    setEditingId(null);
-                  }}
-                  className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                  onClick={handleLinkGoogle}
+                  className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 mt-2"
                 >
-                  Cancelar
+                  Vincular Google
                 </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                >
-                  {editingId ? "Salvar Alterações" : "Cadastrar Produto"}
-                </button>
-              </div>
-            </form>
-          </div>
+              )}
+              {message && (
+                <p className="text-red-500 text-sm mt-2">{message}</p>
+              )}
+            </div>
+          )}
         </div>
-      )}
+      </div>
+
+      {/* Modal/AdminProdutosModal */}
+      <AdminProdutosModal />
     </div>
   );
 }

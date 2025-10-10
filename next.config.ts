@@ -1,7 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
   eslint: {
-    ignoreDuringBuilds: true, // 🔥 Ignora erros de ESLint no build da Vercel
+    // Ignora erros de ESLint durante o build (útil para deploy na Vercel)
+    ignoreDuringBuilds: true,
+  },
+  images: {
+    // Permite carregar imagens de usuários do Google
+    domains: ["lh3.googleusercontent.com"],
   },
 };
 
