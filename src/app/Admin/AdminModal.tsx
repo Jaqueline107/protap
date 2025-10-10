@@ -188,23 +188,24 @@ export default function AdminProdutosModal() {
       {produtos.length === 0 ? (
         <p>Nenhum produto cadastrado.</p>
       ) : (
-        <div className="overflow-x-auto max-h-[500px] overflow-y-auto border border-gray-300 rounded">
-          <table className="w-full border-collapse border border-gray-300">
+
+        <div className="overflow-x-auto max-h-[500px] overflow-y-auto border border-gray-300 rounded mx-[5px]">
+          <table className="w-[calc(100%-10px)] min-w-[500px] border-collapse border border-gray-300">
             <thead>
               <tr className="bg-gray-100">
-                <th className="border p-2">Modelo</th>
-                <th className="border p-2">Título</th>
-                <th className="border p-2">Preço</th>
-                <th className="border p-2">Ações</th>
+                <th className="border p-3">Modelo</th>
+                <th className="border p-3">Título</th>
+                <th className="border p-3">Preço</th>
+                <th className="border p-3">Ações</th>
               </tr>
             </thead>
             <tbody>
               {produtos.map((p) => (
                 <tr key={p.id} className="text-center">
-                  <td className="border p-2">{p.modelo}</td>
-                  <td className="border p-2">{p.titulo}</td>
-                  <td className="border p-2">{p.price}</td>
-                  <td className="border p-2 flex gap-2 justify-center">
+                  <td className="border p-3">{p.modelo}</td>
+                  <td className="border p-3">{p.titulo}</td>
+                  <td className="border p-3">{p.price}</td>
+                  <td className="border p-3 flex gap-2 justify-center flex-wrap">
                     <button
                       onClick={() => handleEdit(p)}
                       className="bg-blue-600 text-white px-3 py-1 rounded-md"
@@ -223,6 +224,7 @@ export default function AdminProdutosModal() {
             </tbody>
           </table>
         </div>
+
       )}
 
       {modalOpen && (
