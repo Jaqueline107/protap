@@ -8,7 +8,6 @@ import {
   signInWithPopup,
   signOut,
   createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
   linkWithPopup,
   User,
 } from "firebase/auth";
@@ -27,9 +26,6 @@ export default function AdminPage() {
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [newAdminPassword, setNewAdminPassword] = useState("");
   const [message, setMessage] = useState("");
-
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
   const [showLinkGoogle, setShowLinkGoogle] = useState(false);
 
   // --- Verifica login e permissões admin ---
@@ -68,15 +64,13 @@ export default function AdminPage() {
   // --- Linkar conta Google ao email existente ---
   const handleLinkGoogle = async () => {
     if (!user) return;
-    const auth = getAuth();
     const provider = new GoogleAuthProvider();
     try {
       await linkWithPopup(user, provider);
       alert("✅ Conta Google vinculada com sucesso!");
       setShowLinkGoogle(false);
-    } catch (err: any) {
-      console.error(err);
-      alert(err.message || "Erro ao vincular Google");
+    } catch {
+      alert( "Erro ao vincular Google");
     }
   };
 
@@ -113,9 +107,8 @@ export default function AdminPage() {
       setNewAdminEmail("");
       setNewAdminPassword("");
       setShowAddAdmin(false);
-    } catch (err: any) {
-      console.error(err);
-      setMessage(err.message || "Erro ao criar novo admin");
+    } catch{
+       alert( "Erro ao criar novo admin");
     }
   };
 
