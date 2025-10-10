@@ -48,7 +48,7 @@ export default function AdminPage() {
     });
     return () => unsubscribe();
   }, [router]);
-
+  console.log(setMessage)
   // --- Login Google ---
   const handleLoginGoogle = async () => {
     const auth = getAuth();
