@@ -31,6 +31,7 @@ export default function AdminPage() {
   // --- Verifica login e permissões admin ---
   useEffect(() => {
     const auth = getAuth();
+     signOut(auth); 
     const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
