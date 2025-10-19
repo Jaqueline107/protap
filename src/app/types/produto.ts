@@ -1,4 +1,3 @@
-// types/produto.ts
 export interface Produto {
   id: string;
   titulo: string;
@@ -8,4 +7,10 @@ export interface Produto {
   fullPrice: string;
   price: string;
   anoSelecionado?: string | null;
+
+  // Campos para cálculo de frete
+  width?: number;    // largura em cm
+  height?: number;   // altura em cm
+  length?: number;   // comprimento em cm
+  weight?: number;   // peso em kg
 }

@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { db } from "../../db/firebase";
 import { collection, getDocs, setDoc, doc, deleteDoc } from "firebase/firestore";
 
-// --- Tipagem correta do Produto ---
 interface Produto {
   id: string;
   modelo: string;
@@ -13,10 +12,13 @@ interface Produto {
   price: string;
   description: string;
   images: string[];
-  ano?: string[];
+  ano: string[];
+  weight: number;
+  width: number;
+  height: number;
+  length: number;
 }
 
-// Para o formulário, omitimos o "id" (será gerado)
 type ProdutoFormData = Omit<Produto, "id">;
 
 export default function AdminProdutosModal() {
@@ -34,9 +36,12 @@ export default function AdminProdutosModal() {
     description: "",
     images: [""],
     ano: [],
+    weight: 1,
+    width: 60,
+    height: 5,
+    length: 90,
   });
 
-  // Buscar produtos do Firestore
   useEffect(() => {
     const fetchProdutos = async () => {
       setLoading(true);
@@ -53,10 +58,14 @@ export default function AdminProdutosModal() {
             description: data.description ?? "",
             images: Array.isArray(data.images) ? data.images : [""],
             ano: Array.isArray(data.ano) ? data.ano : [],
+            weight: data.weight ?? 1,
+            width: data.width ?? 60,
+            height: data.height ?? 5,
+            length: data.length ?? 90,
           };
         });
         setProdutos(lista);
-      } catch (err: unknown) {
+      } catch (err) {
         console.error("Erro ao buscar produtos:", err);
       } finally {
         setLoading(false);
@@ -66,16 +75,17 @@ export default function AdminProdutosModal() {
     fetchProdutos();
   }, []);
 
-  // --- Helper: cria slug para ID ---
   const slugify = (text: string) =>
     text.toLowerCase().replace(/\s+/g, "-").replace(/[^\w-]+/g, "");
 
-  // --- Inputs do formulário ---
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: Number(value) }));
   };
 
   const handleImageChange = (index: number, value: string) => {
@@ -88,7 +98,6 @@ export default function AdminProdutosModal() {
     setFormData((prev) => ({ ...prev, images: [...prev.images, ""] }));
   };
 
-  // --- Salvar produto ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage("");
@@ -109,11 +118,14 @@ export default function AdminProdutosModal() {
         description: "",
         images: [""],
         ano: [],
+        weight: 1,
+        width: 60,
+        height: 5,
+        length: 90,
       });
       setEditingId(null);
       setModalOpen(false);
 
-      // Atualiza lista de produtos
       const snapshot = await getDocs(collection(db, "produtos"));
       const lista: Produto[] = snapshot.docs.map((d) => {
         const data = d.data();
@@ -126,31 +138,37 @@ export default function AdminProdutosModal() {
           description: data.description ?? "",
           images: Array.isArray(data.images) ? data.images : [""],
           ano: Array.isArray(data.ano) ? data.ano : [],
+          weight: data.weight ?? 1,
+          width: data.width ?? 60,
+          height: data.height ?? 5,
+          length: data.length ?? 90,
         };
       });
       setProdutos(lista);
-    } catch (err: unknown) {
+    } catch (err) {
       console.error(err);
       setMessage("❌ Erro ao salvar produto");
     }
   };
 
-  // --- Editar produto ---
   const handleEdit = (produto: Produto) => {
     setEditingId(produto.id);
     setFormData({
-      modelo: produto.modelo ?? "",
-      titulo: produto.titulo ?? "",
-      fullPrice: produto.fullPrice ?? "",
-      price: produto.price ?? "",
-      description: produto.description ?? "",
+      modelo: produto.modelo,
+      titulo: produto.titulo,
+      fullPrice: produto.fullPrice,
+      price: produto.price,
+      description: produto.description,
       images: produto.images.length ? produto.images : [""],
       ano: produto.ano ?? [],
+      weight: produto.weight,
+      width: produto.width,
+      height: produto.height,
+      length: produto.length,
     });
     setModalOpen(true);
   };
 
-  // --- Excluir produto ---
   const handleDelete = async (id: string) => {
     if (!confirm("Tem certeza que deseja excluir este produto?")) return;
 
@@ -158,7 +176,7 @@ export default function AdminProdutosModal() {
       await deleteDoc(doc(db, "produtos", id));
       setProdutos((prev) => prev.filter((p) => p.id !== id));
       setMessage("✅ Produto excluído com sucesso!");
-    } catch (err: unknown) {
+    } catch (err) {
       console.error(err);
       setMessage("❌ Erro ao excluir produto");
     }
@@ -176,11 +194,7 @@ export default function AdminProdutosModal() {
       </button>
 
       {message && (
-        <p
-          className={`mb-4 ${
-            message.startsWith("✅") ? "text-green-600" : "text-red-600"
-          }`}
-        >
+        <p className={`mb-4 ${message.startsWith("✅") ? "text-green-600" : "text-red-600"}`}>
           {message}
         </p>
       )}
@@ -188,7 +202,6 @@ export default function AdminProdutosModal() {
       {produtos.length === 0 ? (
         <p>Nenhum produto cadastrado.</p>
       ) : (
-
         <div className="overflow-x-auto max-h-[500px] overflow-y-auto border border-gray-300 rounded mx-[5px]">
           <table className="w-[calc(100%-10px)] min-w-[500px] border-collapse border border-gray-300">
             <thead>
@@ -224,92 +237,36 @@ export default function AdminProdutosModal() {
             </tbody>
           </table>
         </div>
-
       )}
 
       {modalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto">
           <div className="bg-white p-6 rounded-lg w-full max-w-lg relative max-h-[85vh] overflow-y-auto mt-32 shadow-lg">
-            <h2 className="text-xl font-bold mb-4">
-              {editingId ? "Editar Produto" : "Adicionar Produto"}
-            </h2>
+            <h2 className="text-xl font-bold mb-4">{editingId ? "Editar Produto" : "Adicionar Produto"}</h2>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <input
-                type="text"
-                name="modelo"
-                placeholder="Modelo"
-                value={formData.modelo}
-                onChange={handleChange}
-                required
-                className="border p-2 rounded"
-              />
-              <input
-                type="text"
-                name="titulo"
-                placeholder="Título"
-                value={formData.titulo}
-                onChange={handleChange}
-                required
-                className="border p-2 rounded"
-              />
-              <input
-                type="text"
-                name="fullPrice"
-                placeholder="Preço original"
-                value={formData.fullPrice}
-                onChange={handleChange}
-                required
-                className="border p-2 rounded"
-              />
-              <input
-                type="text"
-                name="price"
-                placeholder="Preço promocional"
-                value={formData.price}
-                onChange={handleChange}
-                required
-                className="border p-2 rounded"
-              />
-              <textarea
-                name="description"
-                placeholder="Descrição"
-                value={formData.description}
-                onChange={handleChange}
-                className="border p-2 rounded"
-              />
+              <input type="text" name="modelo" placeholder="Modelo" value={formData.modelo} onChange={handleChange} required className="border p-2 rounded" />
+              <input type="text" name="titulo" placeholder="Título" value={formData.titulo} onChange={handleChange} required className="border p-2 rounded" />
+              <input type="text" name="fullPrice" placeholder="Preço original" value={formData.fullPrice} onChange={handleChange} required className="border p-2 rounded" />
+              <input type="text" name="price" placeholder="Preço promocional" value={formData.price} onChange={handleChange} required className="border p-2 rounded" />
+              <textarea name="description" placeholder="Descrição" value={formData.description} onChange={handleChange} className="border p-2 rounded" />
+
+              {/* Campos numéricos com placeholders claros */}
+              <input type="number" name="weight" placeholder="Peso (kg)" value={formData.weight} onChange={handleNumberChange} required className="border p-2 rounded" />
+              <input type="number" name="width" placeholder="Largura (cm)" value={formData.width} onChange={handleNumberChange} required className="border p-2 rounded" />
+              <input type="number" name="length" placeholder="Comprimento (cm)" value={formData.length} onChange={handleNumberChange} required className="border p-2 rounded" />
+              <input type="number" name="height" placeholder="Altura (cm)" value={formData.height} onChange={handleNumberChange} required className="border p-2 rounded" />
+
+              {/* Imagens */}
               <div className="flex flex-col gap-2">
                 {formData.images.map((img, idx) => (
-                  <input
-                    key={idx}
-                    type="text"
-                    placeholder={`URL imagem ${idx + 1}`}
-                    value={img}
-                    onChange={(e) => handleImageChange(idx, e.target.value)}
-                    className="border p-2 rounded"
-                  />
+                  <input key={idx} type="text" placeholder={`URL imagem ${idx + 1}`} value={img} onChange={(e) => handleImageChange(idx, e.target.value)} className="border p-2 rounded" />
                 ))}
-                <button
-                  type="button"
-                  onClick={addImageField}
-                  className="bg-gray-200 px-3 py-1 rounded"
-                >
-                  + Adicionar imagem
-                </button>
+                <button type="button" onClick={addImageField} className="bg-gray-200 px-3 py-1 rounded">+ Adicionar imagem</button>
               </div>
+
               <div className="flex justify-end gap-2 mt-4">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="bg-gray-300 px-4 py-2 rounded"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="bg-green-600 text-white px-4 py-2 rounded"
-                >
-                  Salvar
-                </button>
+                <button type="button" onClick={() => setModalOpen(false)} className="bg-gray-300 px-4 py-2 rounded">Cancelar</button>
+                <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded">Salvar</button>
               </div>
             </form>
           </div>
