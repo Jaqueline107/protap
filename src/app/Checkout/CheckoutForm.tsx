@@ -1,24 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react"; // Removido useEffect e useCallback
 import type { Produto } from "../types/produto";
 import { Truck, Package } from "lucide-react";
-import Image from "next/image";
-
-// --- Tipos ---
-interface Frete {
-  codigo: string;
-  nome: string;
-  valor: string | number;
-  prazo: number;
-}
-
-interface FreteAPI {
-  codigo: string;
-  nome: string;
-  valor: string | number;
-  prazo: number;
-}
+import { Frete } from "../api/frete/route";
 
 interface CheckoutFormProps {
   produto: Produto;
@@ -81,7 +66,7 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
         }),
       });
 
-      const data: { success: boolean; servicos: FreteAPI[]; error?: string } =
+      const data: { success: boolean; servicos?: Frete[]; error?: string } =
         await res.json();
 
       if (!res.ok || !data.success) {
@@ -90,11 +75,11 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
         return;
       }
 
-      const servicosValidos: Frete[] = data.servicos.filter(
-        (f: FreteAPI) => f.codigo === "04510" || f.codigo === "04014"
+      const servicosValidos = data.servicos?.filter(
+        (f) => f.codigo === "04510" || f.codigo === "04014"
       );
 
-      if (!servicosValidos.length) {
+      if (!servicosValidos || servicosValidos.length === 0) {
         setErro("Nenhum serviço PAC ou SEDEX disponível para este CEP.");
         setFretes([]);
         return;
@@ -111,20 +96,12 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
   };
 
   // --- Cálculo dos valores ---
-  const valorProduto = parseFloat(
-    produto.price.toString().replace(/[^\d,\.]/g, "").replace(",", ".")
-  );
+  const valorProduto = Number(produto.price) || 0;
 
   let valorFrete = 0;
   if (shippingMethod && shippingMethod !== "retirada") {
     const freteSelecionado = fretes.find((f) => f.codigo === shippingMethod);
-    if (freteSelecionado) {
-      const v = freteSelecionado.valor;
-      valorFrete =
-        typeof v === "string"
-          ? parseFloat(v.replace(/[^\d,\.]/g, "").replace(",", ".")) || 0
-          : Number(v) || 0;
-    }
+    if (freteSelecionado) valorFrete = Number(freteSelecionado.valor) || 0;
   }
 
   const valorTotal = valorProduto + valorFrete;
@@ -166,8 +143,11 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
       });
 
       const data: { url?: string } = await res.json();
-      if (data.url) window.location.href = data.url;
-      else alert("Erro ao iniciar checkout");
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert("Erro ao iniciar checkout");
+      }
     } catch (err) {
       console.error(err);
       alert("Erro ao iniciar checkout");
@@ -178,17 +158,6 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
     <div className="flex justify-center items-center min-h-screen bg-gray-100 p-4">
       <div className="flex flex-col w-full max-w-lg bg-white rounded-xl shadow-xl p-6 gap-5">
         <h2 className="text-3xl font-bold text-center">{produto.titulo}</h2>
-        <div className="flex justify-center">
-          {produto.images[0] && (
-            <Image
-              src={produto.images[0]}
-              width={400}
-              height={400}
-              alt={produto.titulo}
-              className="rounded"
-            />
-          )}
-        </div>
         <p className="text-2xl font-semibold text-green-600 text-center">
           {formatarPreco(produto.price)}
         </p>
