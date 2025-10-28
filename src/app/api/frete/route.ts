@@ -2,8 +2,7 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
 
-// --- Tipos internos ---
-interface Frete {
+export interface Frete {
   codigo: "04014" | "04510"; // SEDEX ou PAC
   nome: string;
   valor: number;
@@ -18,31 +17,26 @@ interface MelhorEnvioServico {
   error?: string | null;
 }
 
-// Tipagem do corpo recebido
-interface FreteRequestBody {
-  cepDestino: string;
-  peso: number;
-  largura: number;
-  altura: number;
-  comprimento: number;
-}
+interface MelhorEnvioResponse extends Array<MelhorEnvioServico> {}
 
 export async function POST(req: Request) {
   try {
-    const body: FreteRequestBody = await req.json();
+    const body: {
+      cepDestino: string;
+      peso: number;
+      largura: number;
+      altura: number;
+      comprimento: number;
+    } = await req.json();
+
     const { cepDestino, peso, largura, altura, comprimento } = body;
 
-    if (!cepDestino || !peso || !largura || !altura || !comprimento) {
-      return NextResponse.json(
-        { success: false, error: "Dados de frete incompletos." },
-        { status: 400 }
-      );
-    }
+    console.log("Recebido no backend:", { cepDestino, peso, largura, altura, comprimento });
 
     const apiKey = process.env.MELHOR_ENVIO_TOKEN;
     if (!apiKey) throw new Error("Chave MELHOR_ENVIO_TOKEN não definida");
 
-    const res = await axios.post<MelhorEnvioServico[]>(
+    const res = await axios.post<MelhorEnvioResponse>(
       "https://www.melhorenvio.com.br/api/v2/me/shipment/calculate",
       {
         from: { postal_code: "01001000" },
@@ -67,6 +61,7 @@ export async function POST(req: Request) {
     );
 
     const data = res.data;
+    console.log("Resposta do Melhor Envio:", JSON.stringify(data, null, 2));
 
     const servicos: Frete[] = data
       .filter((s) => (s.name === "PAC" || s.name === "SEDEX") && !s.error)
