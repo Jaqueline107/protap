@@ -1,18 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  eslint: {
-    ignoreDuringBuilds: true, // Ignora erros de ESLint durante build
-  },
   images: {
     domains: [
-      "lh3.googleusercontent.com", // Para avatars do Google
-      "via.placeholder.com",       // Caso queira imagens placeholder
+      "lh3.googleusercontent.com",
+      "via.placeholder.com",
+      "res.cloudinary.com", // necessário para imagens Cloudinary
     ],
-    formats: ["image/avif", "image/webp"], // Otimização automática de formatos
+    formats: ["image/avif", "image/webp"],
   },
   experimental: {
-    appDir: true, // Certifica que App Router está ativado
+    appDir: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
   },
 };
 

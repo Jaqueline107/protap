@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Banner from "./Components/banner";
@@ -24,7 +24,7 @@ const calculateDiscountPercentage = (fullPrice: string, price: string): number =
 
 // Tipo do produto no Firestore
 interface FirestoreProduct {
-  titulo: string; // ← agora pega o título do Admin
+  titulo: string;
   fullPrice: string;
   images: string[];
 }
@@ -32,7 +32,7 @@ interface FirestoreProduct {
 // Tipo do produto final renderizado
 interface Product extends FirestoreProduct {
   id: string;
-  name: string; // ← name será o mesmo que titulo
+  name: string;
   price: string;
   discount: number;
   href: string;
@@ -54,7 +54,7 @@ export default function Home() {
 
           return {
             id: doc.id,
-            name: data.titulo, // ← aqui usamos o titulo como name
+            name: data.titulo,
             titulo: data.titulo,
             fullPrice: data.fullPrice,
             images: data.images,
@@ -131,6 +131,7 @@ export default function Home() {
                       width={450}
                       height={200}
                       alt={product.name}
+                      className="object-cover rounded-md"
                     />
                     <p className="mt-5 text-2xl">{product.name}</p>
                     <p className="text-gray-400 line-through text-xl">{product.fullPrice}</p>

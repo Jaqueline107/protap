@@ -4,7 +4,11 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "protapcars.vercel.app",
+        hostname: "protapcars.vercel.app", // seu domínio
+      },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com", // Cloudinary
       },
     ],
   },

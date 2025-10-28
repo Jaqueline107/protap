@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { db } from "../../db/firebase";
 import { collection, getDocs, setDoc, doc, deleteDoc } from "firebase/firestore";
 import type { Produto } from "../types/produto";
@@ -27,7 +28,7 @@ export default function AdminProdutosModal() {
     weight: 0,
   });
 
-  // 🔹 Buscar produtos do Firestore
+  // Buscar produtos
   useEffect(() => {
     const fetchProdutos = async () => {
       setLoading(true);
@@ -37,7 +38,7 @@ export default function AdminProdutosModal() {
           const data = d.data() as Produto;
           return {
             id: d.id,
-            name: data.titulo, // garante compatibilidade com ReactNode
+            name: data.titulo,
             titulo: data.titulo || "",
             modelo: data.modelo || "",
             ano: data.ano || [],
@@ -62,22 +63,16 @@ export default function AdminProdutosModal() {
     fetchProdutos();
   }, []);
 
-  // 🔹 Atualizar campos do formulário
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  // Atualizar campos
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // 🔹 Adicionar campo de imagem
-  const addImageField = () =>
-    setFormData((prev) => ({ ...prev, images: [...prev.images, ""] }));
+  // Adicionar campo de imagem
+  const addImageField = () => setFormData((prev) => ({ ...prev, images: [...prev.images, ""] }));
 
-  // 🔹 Upload de imagem para Cloudinary
+  // Upload de imagem para Cloudinary
   const handleUploadImage = async (file: File, index: number) => {
     const formDataCloud = new FormData();
     formDataCloud.append("file", file);
@@ -85,10 +80,7 @@ export default function AdminProdutosModal() {
     try {
       const res = await fetch(
         "https://api.cloudinary.com/v1_1/dxylfznat/image/upload",
-        {
-          method: "POST",
-          body: formDataCloud,
-        }
+        { method: "POST", body: formDataCloud }
       );
       const data = await res.json();
       if (data.secure_url) {
@@ -101,7 +93,7 @@ export default function AdminProdutosModal() {
     }
   };
 
-  // 🔹 Salvar produto
+  // Salvar produto
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage("");
@@ -113,11 +105,7 @@ export default function AdminProdutosModal() {
 
     try {
       const id = editingId || formData.titulo.toLowerCase().replace(/\s+/g, "-");
-      const produtoData: Produto = {
-        ...formData,
-        id,
-        name: formData.titulo, // ReactNode
-      };
+      const produtoData: Produto = { ...formData, id, name: formData.titulo };
 
       await setDoc(doc(db, "produtos", id), produtoData);
       setMessage(`✅ Produto ${editingId ? "editado" : "cadastrado"} com sucesso!`);
@@ -132,7 +120,6 @@ export default function AdminProdutosModal() {
     }
   };
 
-  // 🔹 Editar produto
   const handleEdit = (produto: Produto) => {
     setEditingId(produto.id);
     setFormData({
@@ -151,7 +138,6 @@ export default function AdminProdutosModal() {
     setModalOpen(true);
   };
 
-  // 🔹 Excluir produto
   const handleDelete = async (id: string) => {
     if (!confirm("Tem certeza que deseja excluir este produto?")) return;
     try {
@@ -176,11 +162,7 @@ export default function AdminProdutosModal() {
       </button>
 
       {message && (
-        <p
-          className={`mb-4 ${
-            message.startsWith("✅") ? "text-green-600" : "text-red-600"
-          }`}
-        >
+        <p className={`mb-4 ${message.startsWith("✅") ? "text-green-600" : "text-red-600"}`}>
           {message}
         </p>
       )}
@@ -194,6 +176,7 @@ export default function AdminProdutosModal() {
               <tr>
                 <th className="border p-3">Título</th>
                 <th className="border p-3">Preço</th>
+                <th className="border p-3">Imagem</th>
                 <th className="border p-3">Ações</th>
               </tr>
             </thead>
@@ -201,8 +184,17 @@ export default function AdminProdutosModal() {
               {produtos.map((p) => (
                 <tr key={p.id} className="text-center">
                   <td className="border p-3">{p.titulo}</td>
+                  <td className="border p-3">R$ {parseFloat(p.price || "0").toFixed(2)}</td>
                   <td className="border p-3">
-                    R$ {parseFloat(p.price || "0").toFixed(2)}
+                    {p.images[0] && (
+                      <Image
+                        src={p.images[0]}
+                        alt={p.titulo}
+                        width={64}
+                        height={64}
+                        className="object-cover rounded"
+                      />
+                    )}
                   </td>
                   <td className="border p-3 flex gap-2 justify-center flex-wrap">
                     <button
@@ -228,9 +220,7 @@ export default function AdminProdutosModal() {
       {modalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 overflow-y-auto">
           <div className="bg-white p-6 rounded-lg w-full max-w-lg relative max-h-[85vh] overflow-y-auto mt-32 shadow-lg">
-            <h2 className="text-xl font-bold mb-4">
-              {editingId ? "Editar Produto" : "Adicionar Produto"}
-            </h2>
+            <h2 className="text-xl font-bold mb-4">{editingId ? "Editar Produto" : "Adicionar Produto"}</h2>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <input
                 name="titulo"
@@ -263,14 +253,7 @@ export default function AdminProdutosModal() {
                 onChange={handleChange}
                 className="border p-2 rounded"
               />
-              <textarea
-                name="description"
-                placeholder="Descrição"
-                onChange={handleChange}
-                className="border p-2 rounded"
-              />
 
-              {/* Upload de imagens */}
               <div className="flex flex-col gap-2">
                 {formData.images.map((img, idx) => (
                   <div key={idx} className="flex gap-2 items-center">
@@ -278,16 +261,17 @@ export default function AdminProdutosModal() {
                       type="file"
                       accept="image/*"
                       onChange={(e) =>
-                        e.target.files &&
-                        handleUploadImage(e.target.files[0], idx)
+                        e.target.files && handleUploadImage(e.target.files[0], idx)
                       }
                       className="border p-2 rounded flex-1"
                     />
                     {img && (
-                      <img
+                      <Image
                         src={img}
                         alt={`Produto ${idx + 1}`}
-                        className="w-16 h-16 object-cover rounded"
+                        width={64}
+                        height={64}
+                        className="object-cover rounded"
                       />
                     )}
                   </div>
