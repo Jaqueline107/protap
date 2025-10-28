@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import type { Produto } from "../types/produto";
+import { Truck, Package } from "lucide-react";
 
 interface Frete {
   codigo: string;
   nome: string;
-  valor: string;
+  valor: string | number;
   prazo: number;
 }
 
@@ -27,56 +28,98 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
   const [cpfErro, setCpfErro] = useState(false);
   const [cepErro, setCepErro] = useState(false);
 
-  // ✅ Validações simples
+  // --- Validações ---
   const validarCPF = (value: string) => {
     const clean = value.replace(/\D/g, "");
     return clean.length === 11 && !/^(\d)\1+$/.test(clean);
   };
-
   const validarCEP = (value: string) => value.replace(/\D/g, "").length === 8;
   const validarEmail = (value: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.toLowerCase());
 
-  // ✅ Calcular frete com Melhor Envio
+  // --- Formata preço ---
+  const formatarPreco = (valor: string | number) => {
+    let num: number;
+    if (typeof valor === "string") {
+      num = parseFloat(valor.replace(/[^\d,\.]/g, "").replace(",", "."));
+    } else {
+      num = valor;
+    }
+    if (isNaN(num)) num = 0;
+    return num.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  };
+
+  // --- Consultar frete ---
   const consultarFrete = async () => {
     if (!validarCEP(cep)) {
       setCepErro(true);
       return;
     }
-
     setCepErro(false);
     setErro("");
     setLoadingFrete(true);
 
     try {
-      const res = await fetch("/api/melhor-envio", {
+      const res = await fetch("/api/frete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          cepDestino: cep,
-          produto: {
-            peso: produto.weight,
-            largura: produto.width,
-            altura: produto.height,
-            comprimento: produto.length,
-          },
+          cepDestino: cep.replace(/\D/g, ""),
+          peso: produto.weight,
+          largura: produto.width,
+          altura: produto.height,
+          comprimento: produto.length,
         }),
       });
 
       const data = await res.json();
-      if (!res.ok || !data.servicos) {
-        throw new Error("Erro ao obter o frete");
+
+      if (!res.ok || !data.success) {
+        setErro(data.error || "Erro ao obter frete");
+        setFretes([]);
+        return;
       }
 
-      setFretes(data.servicos);
-    } catch (error) {
+      const servicosValidos = data.servicos.filter(
+        (f: any) => f.codigo === "04510" || f.codigo === "04014"
+      );
+
+      if (!servicosValidos || servicosValidos.length === 0) {
+        setErro("Nenhum serviço PAC ou SEDEX disponível para este CEP.");
+        setFretes([]);
+        return;
+      }
+
+      setFretes(servicosValidos);
+      setErro("");
+    } catch {
       setErro("Erro na conexão com o servidor.");
+      setFretes([]);
     } finally {
       setLoadingFrete(false);
     }
   };
 
-  // ✅ Botão de compra só habilita se tudo estiver válido
+  // --- Cálculo dos valores ---
+  const valorProduto = parseFloat(
+    produto.price.toString().replace(/[^\d,\.]/g, "").replace(",", ".")
+  );
+
+  let valorFrete = 0;
+  if (shippingMethod && shippingMethod !== "retirada") {
+    const freteSelecionado = fretes.find((f) => f.codigo === shippingMethod);
+    if (freteSelecionado) {
+      const v = freteSelecionado.valor;
+      valorFrete =
+        typeof v === "string"
+          ? parseFloat(v.toString().replace(/[^\d,\.]/g, "").replace(",", ".")) ||
+            0
+          : Number(v) || 0;
+    }
+  }
+
+  const valorTotal = valorProduto + valorFrete;
+
   const isButtonDisabled =
     !nome ||
     !email ||
@@ -87,16 +130,55 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
     !validarCEP(cep) ||
     !shippingMethod;
 
+  // --- Checkout Stripe ---
+  const iniciarCheckout = async () => {
+    if (isButtonDisabled) return;
+
+    try {
+      const res = await fetch("/api/checkout_sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: [
+            {
+              name: produto.titulo,
+              price: produto.price,
+              images: [produto.images[0]], // usa só a primeira imagem
+              quantity: 1,
+            },
+          ],
+          shipping:
+            shippingMethod === "retirada"
+              ? { method: "retirada", valor: "0,00" }
+              : fretes
+                  .filter((f) => f.codigo === shippingMethod)
+                  .map((f) => ({
+                    method: f.codigo,
+                    valor: f.valor.toString(),
+                  }))[0],
+        }),
+      });
+
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert("Erro ao iniciar checkout");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao iniciar checkout");
+    }
+  };
+
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100 p-4">
       <div className="flex flex-col w-full max-w-lg bg-white rounded-xl shadow-xl p-6 gap-5">
-        {/* Produto */}
         <h2 className="text-3xl font-bold text-center">{produto.titulo}</h2>
         <p className="text-2xl font-semibold text-green-600 text-center">
-          {produto.price}
+          {formatarPreco(produto.price)}
         </p>
 
-        {/* Dados pessoais */}
         <input
           type="text"
           placeholder="Nome completo"
@@ -104,7 +186,6 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
           onChange={(e) => setNome(e.target.value)}
           className="border-b-2 border-gray-300 p-2 outline-none w-full text-center"
         />
-
         <input
           type="email"
           placeholder="Email"
@@ -140,9 +221,7 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
             cpfErro ? "border-red-600" : "border-gray-300"
           }`}
         />
-        {cpfErro && (
-          <p className="text-red-600 text-sm text-center">CPF inválido</p>
-        )}
+        {cpfErro && <p className="text-red-600 text-sm text-center">CPF inválido</p>}
 
         <input
           type="text"
@@ -161,9 +240,7 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
             cepErro ? "border-red-600" : "border-gray-300"
           }`}
         />
-        {cepErro && (
-          <p className="text-red-600 text-sm text-center">CEP inválido</p>
-        )}
+        {cepErro && <p className="text-red-600 text-sm text-center">CEP inválido</p>}
 
         <button
           onClick={consultarFrete}
@@ -175,7 +252,7 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
 
         {erro && <p className="text-red-600 text-center">{erro}</p>}
 
-        {/* Opções de frete */}
+        {/* Fretes */}
         <div className="flex flex-col gap-2 mt-3">
           <label className="flex items-center gap-2 border p-2 rounded cursor-pointer">
             <input
@@ -185,6 +262,7 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
               checked={shippingMethod === "retirada"}
               onChange={() => setShippingMethod("retirada")}
             />
+            <Package className="text-gray-600 w-5 h-5" />
             Retirada na Loja (Grátis)
           </label>
 
@@ -200,13 +278,19 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
                 checked={shippingMethod === f.codigo}
                 onChange={() => setShippingMethod(f.codigo)}
               />
-              {f.nome} - R$ {f.valor} - {f.prazo} dias úteis
+              <Truck className="text-gray-600 w-5 h-5" />
+              {f.nome} — {formatarPreco(f.valor)} — {f.prazo} dias úteis
             </label>
           ))}
         </div>
 
+        <p className="text-xl font-bold text-right mt-3">
+          Total: {formatarPreco(valorTotal)}
+        </p>
+
         <button
           disabled={isButtonDisabled}
+          onClick={iniciarCheckout}
           className="bg-green-600 text-white py-2 rounded mt-4 w-full disabled:opacity-50"
         >
           Confirmar Compra

@@ -9,19 +9,18 @@ import { doc, getDoc } from "firebase/firestore";
 
 type Product = {
   id: string;
-  titulo: string; // Corrigido
+  titulo: string;
   fullPrice: string;
   price: string;
   description: string;
   images: string[];
-  ano?: string[];
+  ano?: string[]; // 🔥 Importante — anos disponíveis
   modelo?: string;
 };
 
-// Função robusta para converter preço string → number
-const parsePrice = (value: string): number => {
-  return parseFloat(value.replace(/[^\d,]/g, "").replace(",", "."));
-};
+// Converte preço string → number
+const parsePrice = (value: string): number =>
+  parseFloat(value.replace(/[^\d,]/g, "").replace(",", ".")) || 0;
 
 const calculateDiscountPercentage = (fullPrice: string, price: string): number => {
   const numericFullPrice = parsePrice(fullPrice);
@@ -44,37 +43,41 @@ function ProdutosContent() {
   const { addToCart } = useCart();
   const router = useRouter();
 
-  useEffect(() => {
+  // Busca produto
+  const fetchProduct = async () => {
     if (!productId) return;
 
-    const fetchProduct = async () => {
-      try {
-        const docRef = doc(db, "produtos", productId);
-        const docSnap = await getDoc(docRef);
+    try {
+      const docRef = doc(db, "produtos", productId);
+      const docSnap = await getDoc(docRef);
 
-        if (docSnap.exists()) {
-          const data = docSnap.data() as Product;
-          const price = parsePrice(data.fullPrice) * 0.7;
+      if (docSnap.exists()) {
+        const data = docSnap.data() as Product;
 
-          setProduct({
-            ...data,
-            id: docSnap.id,
-            price: `R$${price.toFixed(2).replace(".", ",")}`,
-            ano: data.ano || [],
-          });
+        const priceNumber = parsePrice(data.fullPrice);
+        const discountPrice = (priceNumber * 0.7).toFixed(2).replace(".", ",");
 
-          setMainImage(data.images[0]);
-        } else {
-          setProduct(null);
-        }
-      } catch (err) {
-        console.error(err);
+        const updatedProduct = {
+          ...data,
+          id: docSnap.id,
+          price: `R$${discountPrice}`,
+          ano: Array.isArray(data.ano) ? data.ano : [], // 🔥 Garante que seja sempre array
+        };
+
+        setProduct(updatedProduct);
+        setMainImage(updatedProduct.images?.[0] || "");
+      } else {
         setProduct(null);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (err) {
+      console.error("Erro ao buscar produto:", err);
+      setProduct(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchProduct();
   }, [productId]);
 
@@ -84,7 +87,7 @@ function ProdutosContent() {
   const discountPercentage = calculateDiscountPercentage(product.fullPrice, product.price);
 
   const handleBuyNow = () => {
-    if (!selectedAno) {
+    if (product?.ano?.length && !selectedAno) {
       setShowAnoError(true);
       return;
     }
@@ -94,7 +97,7 @@ function ProdutosContent() {
       return;
     }
 
-    router.push(`/Checkout?productId=${product.id}&ano=${selectedAno}`);
+    router.push(`/Checkout?productId=${product.id}&ano=${selectedAno || ""}`);
   };
 
   const handleAnoClick = (ano: string) => {
@@ -106,20 +109,23 @@ function ProdutosContent() {
   return (
     <div className="flex flex-col items-center">
       <main className="w-5/6 mt-20 flex flex-col lg:flex-row gap-12">
-        {/* Imagens */}
+        {/* 🖼️ Imagens */}
         <div className="flex flex-col items-center w-full lg:w-1/2">
-          <Image
-            key={mainImage}
-            src={mainImage}
-            alt={product.titulo}
-            width={500}
-            height={500}
-            priority
-            sizes="(max-width: 768px) 100vw, 50vw"
-            className="rounded-sm"
-          />
+          {mainImage && (
+            <Image
+              key={mainImage}
+              src={mainImage}
+              alt={product.titulo}
+              width={500}
+              height={500}
+              priority
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="rounded-md"
+            />
+          )}
+
           <div className="flex h-32 gap-4 mt-8 justify-center">
-            {product.images.map((src, index) => (
+            {product.images?.map((src, index) => (
               <button key={index} onClick={() => setMainImage(src)} className="focus:outline-none">
                 <Image
                   src={src}
@@ -135,72 +141,72 @@ function ProdutosContent() {
           </div>
         </div>
 
-        {/* Informações */}
-        <div className="w-full lg:w-1/2 flex flex-col justify-start mt-6 gap-2 lg:mt-0">
+        {/* 🧾 Informações */}
+        <div className="w-full lg:w-1/2 flex flex-col justify-start mt-6 gap-3 lg:mt-0">
           <h1 className="text-3xl font-bold text-gray-900">{product.titulo}</h1>
-          <h1 className="text-2xl font-bold text-gray-400 line-through">{product.fullPrice}</h1>
+          <h2 className="text-2xl font-bold text-gray-400 line-through">{product.fullPrice}</h2>
+
           <div className="flex gap-3">
-            <p className="text-gray-700 text-4xl font-bold -mt-1">{product.price}</p>
+            <p className="text-gray-700 text-4xl font-bold">{product.price}</p>
             {discountPercentage > 0 && (
               <p className="text-3xl font-bold text-lime-500">{discountPercentage}% OFF</p>
             )}
           </div>
 
-          {/* Comprar, Carrinho e Ano */}
-          <div className="flex flex-wrap gap-2 mt-4 items-center">
+          {/* ⚙️ Seleção de Ano */}
+          {product.ano && product.ano.length > 0 && (
+            <div className="relative mt-4">
+              <button
+                onClick={() => setShowAnos(!showAnos)}
+                className={`px-4 py-2 border rounded-md font-semibold transition-all ${
+                  selectedAno
+                    ? "border-blue-500 text-blue-600"
+                    : showAnoError
+                    ? "border-red-500 bg-red-500 text-white"
+                    : "border-gray-400 text-gray-500"
+                }`}
+              >
+                {selectedAno || "Selecione o Ano"}
+              </button>
+
+              {showAnos && (
+                <div className="absolute top-full left-0 mt-2 bg-white border rounded-md shadow-md z-50 p-2">
+                  {product.ano
+                    .filter((a) => a !== selectedAno)
+                    .map((ano) => (
+                      <button
+                        key={ano}
+                        onClick={() => handleAnoClick(ano)}
+                        className="block w-full text-left px-3 py-1 rounded-md hover:bg-gray-100"
+                      >
+                        {ano}
+                      </button>
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 🛒 Botões */}
+          <div className="flex flex-wrap gap-3 mt-6">
             <button
               onClick={handleBuyNow}
-              className="bg-green-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-700 shadow-md transition-all"
+              className="bg-green-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-700 shadow-md"
             >
               Comprar Agora
             </button>
+
             <button
-              onClick={() => addToCart({
-                ...product, quantity: 1, ano: selectedAno,
-                name: ""
-              })}
-              className="bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 shadow-md transition-all"
+              onClick={() => addToCart({ ...product, quantity: 1, ano: selectedAno, name: "" })}
+              className="bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 shadow-md"
             >
               Adicionar ao Carrinho
             </button>
-
-            {product.ano && product.ano.length > 0 && (
-              <div className="relative">
-                <button
-                  onClick={() => setShowAnos(!showAnos)}
-                  className={`px-4 py-1 border rounded-md font-semibold transition-all ${
-                    selectedAno
-                      ? "border-blue-500 text-blue-500"
-                      : showAnoError
-                      ? "border-red-500 bg-red-500 text-white"
-                      : "border-gray-400 text-gray-400"
-                  }`}
-                >
-                  {selectedAno || "Selecione Ano"}
-                </button>
-
-                {showAnos && (
-                  <div className="absolute top-full left-0 mt-2 w-max flex flex-col gap-2 bg-white p-2 rounded-md shadow-md z-50">
-                    {product.ano
-                      .filter((a) => a !== selectedAno)
-                      .map((ano) => (
-                        <button
-                          key={ano}
-                          onClick={() => handleAnoClick(ano)}
-                          className="px-4 py-1 border border-gray-400 rounded-md text-gray-600 font-medium hover:border-gray-600 hover:text-gray-800"
-                        >
-                          {ano}
-                        </button>
-                      ))}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
-          {/* Descrição */}
-          <div className="mt-6 p-4 h-52 bg-gray-100 rounded-lg shadow-md overflow-y-auto">
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">Descrição do Produto</h2>
+          {/* 📜 Descrição */}
+          <div className="mt-6 p-4 bg-gray-100 rounded-lg shadow-inner max-h-60 overflow-y-auto">
+            <h2 className="text-xl font-semibold mb-2">Descrição do Produto</h2>
             <p className="text-gray-700 leading-relaxed">{product.description}</p>
           </div>
         </div>

@@ -1,4 +1,7 @@
+import { ReactNode } from "react";
+
 export interface Produto {
+  name: ReactNode;
   id: string;
   titulo: string;
   modelo?: string;

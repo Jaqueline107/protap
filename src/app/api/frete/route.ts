@@ -1,52 +1,77 @@
+// src/app/api/frete/route.ts
 import { NextResponse } from "next/server";
+import axios from "axios";
+
+interface Frete {
+  codigo: "04014" | "04510"; // SEDEX ou PAC
+  nome: string;
+  valor: number;
+  prazo: number;
+}
 
 export async function POST(req: Request) {
   try {
-    const { cepOrigem, cepDestino, peso, largura, altura, comprimento } = await req.json();
+    const body = await req.json();
+    const { cepDestino, peso, largura, altura, comprimento } = body;
 
-    const response = await fetch("https://sandbox.melhorenvio.com.br/api/v2/me/shipment/calculate", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": `Bearer ${process.env.MELHOR_ENVIO_TOKEN}`, // token no .env.local
-      },
-      body: JSON.stringify({
-        from: { postal_code: cepOrigem },
+    console.log("Recebido no backend:", { cepDestino, peso, largura, altura, comprimento });
+
+    // Chamada ao Melhor Envio
+    const apiKey = process.env.MELHOR_ENVIO_TOKEN;
+    if (!apiKey) throw new Error("Chave MELHOR_ENVIO_TOKEN não definida");
+
+    const res = await axios.post(
+      "https://www.melhorenvio.com.br/api/v2/me/shipment/calculate",
+      {
+        from: { postal_code: "01001000" }, // CEP da sua loja
         to: { postal_code: cepDestino },
         products: [
           {
-            id: "1",
-            weight: Number(peso),
-            width: Number(largura),
-            height: Number(altura),
-            length: Number(comprimento),
-            insurance_value: 100,
+            weight: peso,
+            length: comprimento,
+            height: altura,
+            width: largura,
             quantity: 1,
           },
         ],
-        services: "1,2", // PAC e SEDEX
-        options: { receipt: false, own_hand: false, collect: false },
-      }),
-    });
+        shipping_company: "correios", // Correios apenas
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-    const data = await response.json();
+    const data = res.data;
+    console.log("Resposta do Melhor Envio:", JSON.stringify(data, null, 2));
 
-    if (!response.ok) {
-      console.error("Erro Melhor Envio:", data);
-      return NextResponse.json({ success: false, error: data });
+    // Filtrar apenas PAC e SEDEX que estejam disponíveis
+    const servicos: Frete[] = data
+      .filter((s: any) =>
+        (s.name === "PAC" || s.name === "SEDEX") && !s.error
+      )
+      .map((s: any) => ({
+        codigo: s.name === "PAC" ? "04510" : "04014",
+        nome: s.name,
+        valor: parseFloat(s.price),
+        prazo: s.delivery_time,
+      }));
+
+    if (servicos.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "Nenhum serviço de frete disponível para este CEP." },
+        { status: 200 }
+      );
     }
 
-    const servicos = (data || []).map((f: any) => ({
-      codigo: f.service.id,
-      nome: f.service.name,
-      valor: f.price,
-      prazo: f.delivery_time,
-    }));
-
-    return NextResponse.json({ success: true, servicos });
-  } catch (err) {
-    console.error("Erro geral:", err);
-    return NextResponse.json({ success: false, error: "Erro na conexão com o servidor." });
+    return NextResponse.json({ success: true, servicos }, { status: 200 });
+  } catch (err: any) {
+    console.error("Erro ao calcular frete:", err.message || err);
+    return NextResponse.json(
+      { success: false, error: "Erro ao calcular frete. Tente novamente." },
+      { status: 500 }
+    );
   }
 }

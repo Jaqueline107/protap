@@ -13,7 +13,6 @@ import {
 } from "firebase/auth";
 import { db } from "../../db/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-
 import AdminProdutosModal from "./AdminModal";
 
 export default function AdminPage() {
@@ -28,15 +27,14 @@ export default function AdminPage() {
   const [message, setMessage] = useState("");
   const [showLinkGoogle, setShowLinkGoogle] = useState(false);
 
-  // --- Verifica login e permissões admin ---
   useEffect(() => {
     const auth = getAuth();
     const user = auth.currentUser;
 
     if (user) {
-      user.getIdToken(true) // força atualização das claims
-        .then((token) => console.log("Token atualizado:", token))
-        .catch((err) => console.error("Erro ao atualizar token:", err));
+      user.getIdToken(true).catch((err) =>
+        console.error("Erro ao atualizar token:", err)
+      );
     }
 
     const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
@@ -44,7 +42,6 @@ export default function AdminPage() {
         setUser(currentUser);
         const adminDoc = await getDoc(doc(db, "admins", currentUser.uid));
         if (adminDoc.exists()) {
-          console.log(isAdmin)
           setIsAdmin(true);
         } else {
           alert("❌ Você não tem permissão de administrador!");
@@ -54,8 +51,11 @@ export default function AdminPage() {
       }
       setLoading(false);
     });
+
     return () => unsubscribe();
   }, [router]);
+
+
   console.log(setMessage)
   // --- Login Google ---
   const handleLoginGoogle = async () => {
