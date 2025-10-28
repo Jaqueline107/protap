@@ -1,4 +1,3 @@
-// src/app/api/frete/route.ts
 import { NextResponse } from "next/server";
 import axios from "axios";
 
@@ -17,7 +16,8 @@ interface MelhorEnvioServico {
   error?: string | null;
 }
 
-interface MelhorEnvioResponse extends Array<MelhorEnvioServico> {}
+// Corrigido: usar type em vez de interface vazia
+type MelhorEnvioResponse = MelhorEnvioServico[];
 
 export async function POST(req: Request) {
   try {
