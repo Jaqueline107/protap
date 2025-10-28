@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { Produto } from "../types/produto";
-import Image from "next/image";
 import { Truck, Package } from "lucide-react";
+import Image from "next/image";
 
 // --- Tipos ---
 interface Frete {
@@ -90,12 +90,11 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
         return;
       }
 
-      // Filtra apenas PAC ou SEDEX
       const servicosValidos: Frete[] = data.servicos.filter(
         (f: FreteAPI) => f.codigo === "04510" || f.codigo === "04014"
       );
 
-      if (!servicosValidos || servicosValidos.length === 0) {
+      if (!servicosValidos.length) {
         setErro("Nenhum serviço PAC ou SEDEX disponível para este CEP.");
         setFretes([]);
         return;
@@ -167,11 +166,8 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
       });
 
       const data: { url?: string } = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert("Erro ao iniciar checkout");
-      }
+      if (data.url) window.location.href = data.url;
+      else alert("Erro ao iniciar checkout");
     } catch (err) {
       console.error(err);
       alert("Erro ao iniciar checkout");
@@ -182,6 +178,17 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
     <div className="flex justify-center items-center min-h-screen bg-gray-100 p-4">
       <div className="flex flex-col w-full max-w-lg bg-white rounded-xl shadow-xl p-6 gap-5">
         <h2 className="text-3xl font-bold text-center">{produto.titulo}</h2>
+        <div className="flex justify-center">
+          {produto.images[0] && (
+            <Image
+              src={produto.images[0]}
+              width={400}
+              height={400}
+              alt={produto.titulo}
+              className="rounded"
+            />
+          )}
+        </div>
         <p className="text-2xl font-semibold text-green-600 text-center">
           {formatarPreco(produto.price)}
         </p>
