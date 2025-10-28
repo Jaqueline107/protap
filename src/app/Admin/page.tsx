@@ -27,6 +27,7 @@ export default function AdminPage() {
   const [message, setMessage] = useState("");
   const [showLinkGoogle, setShowLinkGoogle] = useState(false);
 
+  console.log(isAdmin)
   useEffect(() => {
     const auth = getAuth();
     const user = auth.currentUser;

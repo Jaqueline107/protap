@@ -2,9 +2,18 @@
 
 import { useState } from "react";
 import type { Produto } from "../types/produto";
+import Image from "next/image";
 import { Truck, Package } from "lucide-react";
 
+// --- Tipos ---
 interface Frete {
+  codigo: string;
+  nome: string;
+  valor: string | number;
+  prazo: number;
+}
+
+interface FreteAPI {
   codigo: string;
   nome: string;
   valor: string | number;
@@ -72,7 +81,8 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
         }),
       });
 
-      const data = await res.json();
+      const data: { success: boolean; servicos: FreteAPI[]; error?: string } =
+        await res.json();
 
       if (!res.ok || !data.success) {
         setErro(data.error || "Erro ao obter frete");
@@ -80,8 +90,9 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
         return;
       }
 
-      const servicosValidos = data.servicos.filter(
-        (f: any) => f.codigo === "04510" || f.codigo === "04014"
+      // Filtra apenas PAC ou SEDEX
+      const servicosValidos: Frete[] = data.servicos.filter(
+        (f: FreteAPI) => f.codigo === "04510" || f.codigo === "04014"
       );
 
       if (!servicosValidos || servicosValidos.length === 0) {
@@ -112,8 +123,7 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
       const v = freteSelecionado.valor;
       valorFrete =
         typeof v === "string"
-          ? parseFloat(v.toString().replace(/[^\d,\.]/g, "").replace(",", ".")) ||
-            0
+          ? parseFloat(v.replace(/[^\d,\.]/g, "").replace(",", ".")) || 0
           : Number(v) || 0;
     }
   }
@@ -143,7 +153,7 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
             {
               name: produto.titulo,
               price: produto.price,
-              images: [produto.images[0]], // usa só a primeira imagem
+              images: [produto.images[0]],
               quantity: 1,
             },
           ],
@@ -152,14 +162,11 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
               ? { method: "retirada", valor: "0,00" }
               : fretes
                   .filter((f) => f.codigo === shippingMethod)
-                  .map((f) => ({
-                    method: f.codigo,
-                    valor: f.valor.toString(),
-                  }))[0],
+                  .map((f) => ({ method: f.codigo, valor: f.valor.toString() }))[0],
         }),
       });
 
-      const data = await res.json();
+      const data: { url?: string } = await res.json();
       if (data.url) {
         window.location.href = data.url;
       } else {
@@ -179,6 +186,7 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
           {formatarPreco(produto.price)}
         </p>
 
+        {/* Campos do usuário */}
         <input
           type="text"
           placeholder="Nome completo"
@@ -242,6 +250,7 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
         />
         {cepErro && <p className="text-red-600 text-sm text-center">CEP inválido</p>}
 
+        {/* Botão calcular frete */}
         <button
           onClick={consultarFrete}
           disabled={!validarCEP(cep) || loadingFrete}
@@ -252,7 +261,7 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
 
         {erro && <p className="text-red-600 text-center">{erro}</p>}
 
-        {/* Fretes */}
+        {/* Seleção de frete */}
         <div className="flex flex-col gap-2 mt-3">
           <label className="flex items-center gap-2 border p-2 rounded cursor-pointer">
             <input

@@ -9,21 +9,37 @@ interface Frete {
   prazo: number;
 }
 
+// Tipagem do retorno da API do Melhor Envio
+interface MelhorEnvioServico {
+  name: "PAC" | "SEDEX" | string;
+  price: string; // preço como string
+  delivery_time: number;
+  error?: string | null;
+}
+
+interface MelhorEnvioResponse extends Array<MelhorEnvioServico> {}
+
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const body: {
+      cepDestino: string;
+      peso: number;
+      largura: number;
+      altura: number;
+      comprimento: number;
+    } = await req.json();
+
     const { cepDestino, peso, largura, altura, comprimento } = body;
 
     console.log("Recebido no backend:", { cepDestino, peso, largura, altura, comprimento });
 
-    // Chamada ao Melhor Envio
     const apiKey = process.env.MELHOR_ENVIO_TOKEN;
     if (!apiKey) throw new Error("Chave MELHOR_ENVIO_TOKEN não definida");
 
-    const res = await axios.post(
+    const res = await axios.post<MelhorEnvioResponse>(
       "https://www.melhorenvio.com.br/api/v2/me/shipment/calculate",
       {
-        from: { postal_code: "01001000" }, // CEP da sua loja
+        from: { postal_code: "01001000" },
         to: { postal_code: cepDestino },
         products: [
           {
@@ -34,7 +50,7 @@ export async function POST(req: Request) {
             quantity: 1,
           },
         ],
-        shipping_company: "correios", // Correios apenas
+        shipping_company: "correios",
       },
       {
         headers: {
@@ -47,12 +63,9 @@ export async function POST(req: Request) {
     const data = res.data;
     console.log("Resposta do Melhor Envio:", JSON.stringify(data, null, 2));
 
-    // Filtrar apenas PAC e SEDEX que estejam disponíveis
     const servicos: Frete[] = data
-      .filter((s: any) =>
-        (s.name === "PAC" || s.name === "SEDEX") && !s.error
-      )
-      .map((s: any) => ({
+      .filter((s) => (s.name === "PAC" || s.name === "SEDEX") && !s.error)
+      .map((s) => ({
         codigo: s.name === "PAC" ? "04510" : "04014",
         nome: s.name,
         valor: parseFloat(s.price),
@@ -67,8 +80,9 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ success: true, servicos }, { status: 200 });
-  } catch (err: any) {
-    console.error("Erro ao calcular frete:", err.message || err);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Erro desconhecido";
+    console.error("Erro ao calcular frete:", message);
     return NextResponse.json(
       { success: false, error: "Erro ao calcular frete. Tente novamente." },
       { status: 500 }
