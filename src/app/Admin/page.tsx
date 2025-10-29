@@ -14,6 +14,9 @@ import {
 import { db } from "../../db/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import AdminProdutosModal from "./AdminModal";
+import jwt from "jsonwebtoken";
+
+const SECRET = process.env.NEXT_PUBLIC_JWT_SECRET || "sua_chave_secreta_super_segura";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -27,16 +30,9 @@ export default function AdminPage() {
   const [message, setMessage] = useState("");
   const [showLinkGoogle, setShowLinkGoogle] = useState(false);
 
-  console.log(isAdmin)
+  // Checa autenticação e permissões
   useEffect(() => {
     const auth = getAuth();
-    const user = auth.currentUser;
-
-    if (user) {
-      user.getIdToken(true).catch((err) =>
-        console.error("Erro ao atualizar token:", err)
-      );
-    }
 
     const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
       if (currentUser) {
@@ -44,6 +40,14 @@ export default function AdminPage() {
         const adminDoc = await getDoc(doc(db, "admins", currentUser.uid));
         if (adminDoc.exists()) {
           setIsAdmin(true);
+
+          // Gera JWT e salva no cookie
+          const token = jwt.sign(
+            { uid: currentUser.uid, email: currentUser.email },
+            SECRET,
+            { expiresIn: "2h" }
+          );
+          document.cookie = `admin-token=${token}; path=/; max-age=${2 * 60 * 60}`;
         } else {
           alert("❌ Você não tem permissão de administrador!");
           await signOut(auth);
@@ -56,9 +60,7 @@ export default function AdminPage() {
     return () => unsubscribe();
   }, [router]);
 
-
-  console.log(setMessage)
-  // --- Login Google ---
+  // Login com Google
   const handleLoginGoogle = async () => {
     const auth = getAuth();
     const provider = new GoogleAuthProvider();
@@ -70,7 +72,7 @@ export default function AdminPage() {
     }
   };
 
-  // --- Linkar conta Google ao email existente ---
+  // Linkar conta Google
   const handleLinkGoogle = async () => {
     if (!user) return;
     const provider = new GoogleAuthProvider();
@@ -79,20 +81,22 @@ export default function AdminPage() {
       alert("✅ Conta Google vinculada com sucesso!");
       setShowLinkGoogle(false);
     } catch {
-      alert( "Erro ao vincular Google");
+      alert("Erro ao vincular Google");
     }
   };
 
-  // --- Logout ---
+  // Logout
   const handleLogout = async () => {
     const auth = getAuth();
     await signOut(auth);
+    document.cookie = "admin-token=; Max-Age=0; path=/"; // remove JWT
     setUser(null);
     setIsAdmin(false);
     setShowLinkGoogle(false);
+    router.push("/");
   };
 
-  // --- Criar novo admin (só admin logado) ---
+  // Criar novo admin
   const handleAddAdmin = async () => {
     if (!newAdminEmail || !newAdminPassword) {
       alert("Preencha email e senha do novo admin");
@@ -116,36 +120,33 @@ export default function AdminPage() {
       setNewAdminEmail("");
       setNewAdminPassword("");
       setShowAddAdmin(false);
-    } catch{
-       alert( "Erro ao criar novo admin");
+    } catch {
+      alert("Erro ao criar novo admin");
     }
   };
 
-  if (loading)
-    return <p className="text-center mt-32">Carregando...</p>;
+  if (loading) return <p className="text-center mt-32">Carregando...</p>;
 
-  // --- Login email caso não tenha logado ---
+  // Tela de login caso não esteja logado
   if (!user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <h1 className="text-2xl font-bold">Login de Administrador</h1>
-          <button
-            onClick={handleLoginGoogle}
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-          >
-            Google
-          </button>
-        </div>
+        <button
+          onClick={handleLoginGoogle}
+          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        >
+          Google
+        </button>
+      </div>
     );
   }
 
-  // --- Admin logado: painel interno ---
+  // Painel de admin logado
   return (
     <div className="p-8 max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-bold">
-          Painel de Controle
-        </h1>
+        <h1 className="text-xl font-bold">Painel de Controle</h1>
 
         <div className="relative">
           <img
@@ -192,9 +193,7 @@ export default function AdminPage() {
                   Vincular Google
                 </button>
               )}
-              {message && (
-                <p className="text-red-500 text-sm mt-2">{message}</p>
-              )}
+              {message && <p className="text-red-500 text-sm mt-2">{message}</p>}
             </div>
           )}
         </div>

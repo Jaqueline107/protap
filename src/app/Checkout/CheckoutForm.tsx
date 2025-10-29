@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react"; // Removido useEffect e useCallback
+import { useState } from "react";
 import type { Produto } from "../types/produto";
 import { Truck, Package } from "lucide-react";
 import { Frete } from "../api/frete/route";
@@ -16,13 +16,46 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
   const [cep, setCep] = useState("");
   const [fretes, setFretes] = useState<Frete[]>([]);
   const [shippingMethod, setShippingMethod] = useState("");
+  const [valorFrete, setValorFrete] = useState<number>(0);
   const [loadingFrete, setLoadingFrete] = useState(false);
   const [erro, setErro] = useState("");
   const [emailErro, setEmailErro] = useState(false);
   const [cpfErro, setCpfErro] = useState(false);
   const [cepErro, setCepErro] = useState(false);
 
-  // --- Validações ---
+  // ---------- UTIL: parse currency robusto ----------
+  const parseCurrency = (v: string | number | undefined): number => {
+    if (v === undefined || v === null) return 0;
+    if (typeof v === "number") return v;
+    let s = String(v).trim();
+    // remove qualquer prefixo tipo "R$" e qualquer caractere exceto dígito, ponto e vírgula, e sinal
+    s = s.replace(/[^\d.,-]/g, "");
+    if (!s) return 0;
+
+    // Se tem ',' e '.' — assumimos formato pt-BR (ex: 1.234,56) -> remover pontos (milhar) e trocar vírgula por ponto
+    if (s.includes(",") && s.includes(".")) {
+      s = s.replace(/\./g, "").replace(/,/g, ".");
+    } else if (s.includes(",")) {
+      // se só tem vírgula -> vírgula é decimal (50,00 -> 50.00)
+      s = s.replace(/,/g, ".");
+    }
+    // caso só tenha pontos (50.00 ou 1000) deixa como está
+    const n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
+  };
+
+  const formatarPreco = (valor: string | number) => {
+    let num: number;
+    if (typeof valor === "string") {
+      num = parseCurrency(valor);
+    } else {
+      num = valor;
+    }
+    if (isNaN(num)) num = 0;
+    return num.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  };
+
+  // ---------- Validações ----------
   const validarCPF = (value: string) => {
     const clean = value.replace(/\D/g, "");
     return clean.length === 11 && !/^(\d)\1+$/.test(clean);
@@ -31,19 +64,7 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
   const validarEmail = (value: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.toLowerCase());
 
-  // --- Formata preço ---
-  const formatarPreco = (valor: string | number) => {
-    let num: number;
-    if (typeof valor === "string") {
-      num = parseFloat(valor.replace(/[^\d,\.]/g, "").replace(",", "."));
-    } else {
-      num = valor;
-    }
-    if (isNaN(num)) num = 0;
-    return num.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  };
-
-  // --- Consultar frete ---
+  // ---------- Consultar frete ----------
   const consultarFrete = async () => {
     if (!validarCEP(cep)) {
       setCepErro(true);
@@ -72,6 +93,8 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
       if (!res.ok || !data.success) {
         setErro(data.error || "Erro ao obter frete");
         setFretes([]);
+        setValorFrete(0);
+        setShippingMethod("");
         return;
       }
 
@@ -82,27 +105,30 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
       if (!servicosValidos || servicosValidos.length === 0) {
         setErro("Nenhum serviço PAC ou SEDEX disponível para este CEP.");
         setFretes([]);
+        setValorFrete(0);
+        setShippingMethod("");
         return;
       }
 
       setFretes(servicosValidos);
+      // reset seleção anterior
+      setShippingMethod("");
+      setValorFrete(0);
       setErro("");
-    } catch {
+    } catch (err) {
+      console.error("Erro consultarFrete:", err);
       setErro("Erro na conexão com o servidor.");
       setFretes([]);
+      setValorFrete(0);
+      setShippingMethod("");
     } finally {
       setLoadingFrete(false);
     }
   };
 
-  // --- Cálculo dos valores ---
-  const valorProduto = Number(produto.price) || 0;
-
-  let valorFrete = 0;
-  if (shippingMethod && shippingMethod !== "retirada") {
-    const freteSelecionado = fretes.find((f) => f.codigo === shippingMethod);
-    if (freteSelecionado) valorFrete = Number(freteSelecionado.valor) || 0;
-  }
+  // ---------- Valores ----------
+  // garante que convertemos preço do produto corretamente (independente do formato)
+  const valorProduto = parseCurrency(produto.price);
 
   const valorTotal = valorProduto + valorFrete;
 
@@ -116,7 +142,13 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
     !validarCEP(cep) ||
     !shippingMethod;
 
-  // --- Checkout Stripe ---
+  // ---------- seleção de frete ----------
+  const handleSelectFrete = (f: Frete | { codigo: string; valor: string | number }) => {
+    setShippingMethod(f.codigo);
+    setValorFrete(parseCurrency((f as any).valor));
+  };
+
+  // ---------- Checkout ----------
   const iniciarCheckout = async () => {
     if (isButtonDisabled) return;
 
@@ -139,6 +171,15 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
               : fretes
                   .filter((f) => f.codigo === shippingMethod)
                   .map((f) => ({ method: f.codigo, valor: f.valor.toString() }))[0],
+          meta: {
+            nome,
+            email,
+            cpf,
+            cep,
+            valorProduto: valorProduto.toFixed(2),
+            valorFrete: valorFrete.toFixed(2),
+            valorTotal: valorTotal.toFixed(2),
+          },
         }),
       });
 
@@ -154,132 +195,149 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
     }
   };
 
+  // ---------- UI ----------
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100 p-4">
-      <div className="flex flex-col w-full max-w-lg bg-white rounded-xl shadow-xl p-6 gap-5">
-        <h2 className="text-3xl font-bold text-center">{produto.titulo}</h2>
-        <p className="text-2xl font-semibold text-green-600 text-center">
-          {formatarPreco(produto.price)}
+    <div className="flex justify-center items-center min-h-screen bg-gray-50 p-6">
+      <div className="w-full max-w-xl bg-white rounded-2xl shadow-lg p-6">
+        <h2 className="text-2xl font-bold text-center mb-1">{produto.titulo}</h2>
+        <p className="text-center text-green-600 text-lg mb-4">
+          {formatarPreco(valorProduto)}
         </p>
 
-        {/* Campos do usuário */}
-        <input
-          type="text"
-          placeholder="Nome completo"
-          value={nome}
-          onChange={(e) => setNome(e.target.value)}
-          className="border-b-2 border-gray-300 p-2 outline-none w-full text-center"
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => {
-            setEmail(e.target.value);
-            setEmailErro(false);
-          }}
-          onBlur={() => !validarEmail(email) && setEmailErro(true)}
-          className={`border-b-2 p-2 outline-none w-full text-center ${
-            emailErro ? "border-red-600" : "border-gray-300"
-          }`}
-        />
-        {emailErro && (
-          <p className="text-red-600 text-sm text-center">Email inválido</p>
-        )}
+        <div className="grid grid-cols-1 gap-3">
+          <input
+            type="text"
+            placeholder="Nome completo"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            className="border rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-200"
+          />
 
-        <input
-          type="text"
-          placeholder="CPF"
-          value={cpf}
-          onChange={(e) => {
-            const v = e.target.value
-              .replace(/\D/g, "")
-              .replace(/(\d{3})(\d)/, "$1.$2")
-              .replace(/(\d{3})(\d)/, "$1.$2")
-              .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-            setCpf(v);
-            setCpfErro(false);
-          }}
-          maxLength={14}
-          className={`border-b-2 p-2 outline-none w-full text-center ${
-            cpfErro ? "border-red-600" : "border-gray-300"
-          }`}
-        />
-        {cpfErro && <p className="text-red-600 text-sm text-center">CPF inválido</p>}
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setEmailErro(false);
+            }}
+            onBlur={() => !validarEmail(email) && setEmailErro(true)}
+            className={`border rounded-lg p-3 outline-none focus:ring-2 ${
+              emailErro ? "ring-red-200" : "focus:ring-green-200"
+            }`}
+          />
+          {emailErro && <p className="text-red-600 text-sm">Email inválido</p>}
 
-        <input
-          type="text"
-          placeholder="CEP"
-          value={cep}
-          onChange={(e) => {
-            const v = e.target.value
-              .replace(/\D/g, "")
-              .replace(/(\d{5})(\d)/, "$1-$2")
-              .slice(0, 9);
-            setCep(v);
-            setCepErro(false);
-          }}
-          maxLength={9}
-          className={`border-b-2 p-2 outline-none w-full text-center ${
-            cepErro ? "border-red-600" : "border-gray-300"
-          }`}
-        />
-        {cepErro && <p className="text-red-600 text-sm text-center">CEP inválido</p>}
+          <input
+            type="text"
+            placeholder="CPF"
+            value={cpf}
+            onChange={(e) => {
+              const v = e.target.value
+                .replace(/\D/g, "")
+                .replace(/(\d{3})(\d)/, "$1.$2")
+                .replace(/(\d{3})(\d)/, "$1.$2")
+                .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+              setCpf(v);
+              setCpfErro(false);
+            }}
+            maxLength={14}
+            className={`border rounded-lg p-3 outline-none focus:ring-2 ${
+              cpfErro ? "ring-red-200" : "focus:ring-green-200"
+            }`}
+          />
+          {cpfErro && <p className="text-red-600 text-sm">CPF inválido</p>}
 
-        {/* Botão calcular frete */}
-        <button
-          onClick={consultarFrete}
-          disabled={!validarCEP(cep) || loadingFrete}
-          className="bg-blue-600 text-white py-2 rounded mt-2 w-full disabled:opacity-50"
-        >
-          {loadingFrete ? "Consultando..." : "Calcular Frete"}
-        </button>
-
-        {erro && <p className="text-red-600 text-center">{erro}</p>}
-
-        {/* Seleção de frete */}
-        <div className="flex flex-col gap-2 mt-3">
-          <label className="flex items-center gap-2 border p-2 rounded cursor-pointer">
+          <div className="flex gap-2">
             <input
-              type="radio"
-              name="frete"
-              value="retirada"
-              checked={shippingMethod === "retirada"}
-              onChange={() => setShippingMethod("retirada")}
+              type="text"
+              placeholder="CEP"
+              value={cep}
+              onChange={(e) => {
+                const v = e.target.value
+                  .replace(/\D/g, "")
+                  .replace(/(\d{5})(\d)/, "$1-$2")
+                  .slice(0, 9);
+                setCep(v);
+                setCepErro(false);
+              }}
+              maxLength={9}
+              className={`flex-1 border rounded-lg p-3 outline-none focus:ring-2 ${
+                cepErro ? "ring-red-200" : "focus:ring-green-200"
+              }`}
             />
-            <Package className="text-gray-600 w-5 h-5" />
-            Retirada na Loja (Grátis)
-          </label>
-
-          {fretes.map((f) => (
-            <label
-              key={f.codigo}
-              className="flex items-center gap-2 border p-2 rounded cursor-pointer"
+            <button
+              onClick={consultarFrete}
+              disabled={!validarCEP(cep) || loadingFrete}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50"
             >
+              {loadingFrete ? "Consultando..." : "Calcular Frete"}
+            </button>
+          </div>
+          {cepErro && <p className="text-red-600 text-sm">CEP inválido</p>}
+          {erro && <p className="text-red-600 text-sm">{erro}</p>}
+
+          <div className="mt-2 space-y-2">
+            <label className="flex items-center gap-3 p-2 border rounded-lg cursor-pointer">
               <input
                 type="radio"
                 name="frete"
-                value={f.codigo}
-                checked={shippingMethod === f.codigo}
-                onChange={() => setShippingMethod(f.codigo)}
+                value="retirada"
+                checked={shippingMethod === "retirada"}
+                onChange={() => { setShippingMethod("retirada"); setValorFrete(0); }}
               />
-              <Truck className="text-gray-600 w-5 h-5" />
-              {f.nome} — {formatarPreco(f.valor)} — {f.prazo} dias úteis
+              <Package className="w-5 h-5 text-gray-600" />
+              <div>
+                <div className="font-medium">Retirada na Loja</div>
+                <div className="text-sm text-gray-500">Grátis</div>
+              </div>
             </label>
-          ))}
+
+            {fretes.map((f) => (
+              <label
+                key={f.codigo}
+                className="flex items-center gap-3 p-2 border rounded-lg cursor-pointer"
+              >
+                <input
+                  type="radio"
+                  name="frete"
+                  value={f.codigo}
+                  checked={shippingMethod === f.codigo}
+                  onChange={() => handleSelectFrete(f)}
+                />
+                <Truck className="w-5 h-5 text-gray-600" />
+                <div className="flex-1">
+                  <div className="font-medium">{f.nome}</div>
+                  <div className="text-sm text-gray-500">{f.prazo} dias úteis</div>
+                </div>
+                <div className="font-semibold">{formatarPreco(f.valor)}</div>
+              </label>
+            ))}
+          </div>
+
+          <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+            <div className="flex justify-between">
+              <span className="text-gray-600">Produto</span>
+              <span className="font-semibold">{formatarPreco(valorProduto)}</span>
+            </div>
+            <div className="flex justify-between mt-2">
+              <span className="text-gray-600">Frete</span>
+              <span className="font-semibold">{formatarPreco(valorFrete)}</span>
+            </div>
+            <div className="border-t mt-3 pt-3 flex justify-between items-center">
+              <span className="text-lg font-semibold">Total</span>
+              <span className="text-2xl font-bold text-green-600">{formatarPreco(valorTotal)}</span>
+            </div>
+          </div>
+
+          <button
+            disabled={isButtonDisabled}
+            onClick={iniciarCheckout}
+            className="w-full mt-3 bg-green-600 text-white py-3 rounded-lg font-semibold disabled:opacity-50"
+          >
+            Confirmar Compra
+          </button>
         </div>
-
-        <p className="text-xl font-bold text-right mt-3">
-          Total: {formatarPreco(valorTotal)}
-        </p>
-
-        <button
-          disabled={isButtonDisabled}
-          onClick={iniciarCheckout}
-          className="bg-green-600 text-white py-2 rounded mt-4 w-full disabled:opacity-50"
-        >
-          Confirmar Compra
-        </button>
       </div>
     </div>
   );

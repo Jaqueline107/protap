@@ -148,7 +148,7 @@ export default function CarrinhoPage() {
             onClick={handleStripeCheckout}
             className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-md text-lg font-semibold transition shadow-md"
           >
-            Pagar
+            Comprar Agora
           </button>
 
           <button
