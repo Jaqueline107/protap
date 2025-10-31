@@ -5,8 +5,8 @@ import CarpetSelector from "../CarpetSelector/page";
 
 export default function Banner() {
   return (
-    <section className="w-full bg-gradient-to-r from-black via-[#1C1C1C] to-black text-white">
-      <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12 md:py-20 flex flex-col md:flex-row items-center justify-between gap-10">
+    <section className="w-full md:h-96 h-80 bg-gradient-to-r from-black via-[#1C1C1C] to-black text-white">
+      <div className="max-w-6xl -mt-14 mx-auto px-6 lg:px-12 py-12 md:py-20 flex flex-col md:flex-row items-center justify-between gap-10">
         {/* Texto do Banner */}
         <div className="flex flex-col items-center md:items-start text-center md:text-left md:w-1/2">
           {/* Logo/Nome (oculto no mobile) */}
@@ -20,9 +20,8 @@ export default function Banner() {
           </h2>
 
           {/* Descrição (desktop) */}
-          <p className="hidden md:block mt-4 text-gray-400 text-base sm:text-lg max-w-md">
-            Qualidade, durabilidade e estilo para o seu veículo. Conheça nossa
-            linha exclusiva de tapetes automotivos.
+          <p className="hidden md:block mt-4 text-gray-200 text-base sm:text-lg max-w-md">
+            Qualidade, durabilidade e estilo para o seu veículo.
           </p>
 
           {/* Botão CTA (apenas desktop) */}

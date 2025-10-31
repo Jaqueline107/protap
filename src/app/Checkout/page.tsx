@@ -12,45 +12,69 @@ interface CheckoutPageProps {
 
 export default function CheckoutPage({ searchParams }: CheckoutPageProps) {
   const [produto, setProduto] = useState<Produto | null>(null);
+  const [produtos, setProdutos] = useState<Produto[] | null>(null);
   const [mounted, setMounted] = useState(false);
 
   const params = use(searchParams);
-  const productId = params.productId;
 
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    if (!mounted || !productId) return;
+    if (!mounted) return;
 
-    const fetchProduct = async () => {
+    const fetchData = async () => {
       try {
-        const docRef = doc(db, "produtos", productId);
-        const docSnap = await getDoc(docRef);
+        // Caso venha do carrinho
+        if (params.items) {
+          const parsedItems: Produto[] = JSON.parse(params.items).map((item: any) => ({
+            id: item.id,
+            titulo: item.titulo,
+            price: item.price,
+            fullPrice: item.fullPrice,
+            images: item.images,
+            weight: item.weight || 0,
+            width: item.width || 0,
+            height: item.height || 0,
+            length: item.length || 0,
+            anoSelecionado: item.ano || null,
+          }));
+          setProdutos(parsedItems);
+          return;
+        }
 
-        if (docSnap.exists()) {
-          const data = docSnap.data() as Omit<Produto, "id" | "price" | "anoSelecionado">;
-          const fullPrice = parseFloat(data.fullPrice.replace("R$", "").replace(",", "."));
-          const price = (fullPrice * 0.7).toFixed(2);
+        // Caso venha da página de produto
+        if (params.productId) {
+          const docRef = doc(db, "produtos", params.productId);
+          const docSnap = await getDoc(docRef);
 
-          setProduto({
-            id: docSnap.id,
-            ...data,
-            price: `R$${price.replace(".", ",")}`,
-            anoSelecionado: params.ano || (data.ano ? data.ano[0] : null),
-          });
-        } else {
-          console.error("Produto não encontrado");
+          if (docSnap.exists()) {
+            const data = docSnap.data() as Omit<Produto, "id" | "price" | "anoSelecionado">;
+            const fullPrice = parseFloat(data.fullPrice.replace("R$", "").replace(",", "."));
+            const price = (fullPrice * 0.7).toFixed(2);
+
+            setProduto({
+              id: docSnap.id,
+              ...data,
+              price: `R$${price.replace(".", ",")}`,
+              anoSelecionado: params.ano || (data.ano ? data.ano[0] : null),
+            });
+          } else {
+            console.error("Produto não encontrado");
+          }
         }
       } catch (err) {
-        console.error("Erro ao buscar produto:", err);
+        console.error("Erro ao carregar checkout:", err);
       }
     };
 
-    fetchProduct();
-  }, [mounted, productId, params]);
+    fetchData();
+  }, [mounted, params]);
 
   if (!mounted) return null;
-  if (!produto) return <p className="p-8 text-center">Carregando produto...</p>;
 
-  return <CheckoutForm produto={produto} />;
+  if (!produto && !produtos) {
+    return <p className="p-8 text-center">Carregando produtos para checkout...</p>;
+  }
+
+  return <CheckoutForm produto={produto || undefined} produtos={produtos || undefined} />;
 }

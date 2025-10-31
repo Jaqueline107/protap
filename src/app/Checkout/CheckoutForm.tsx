@@ -6,10 +6,11 @@ import { Truck, Package } from "lucide-react";
 import { Frete } from "../api/frete/route";
 
 interface CheckoutFormProps {
-  produto: Produto;
+  produto?: Produto;      // caso venha da página de produto
+  produtos?: Produto[];   // caso venha do carrinho
 }
 
-export default function CheckoutForm({ produto }: CheckoutFormProps) {
+export default function CheckoutForm({ produto, produtos }: CheckoutFormProps) {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [cpf, setCpf] = useState("");
@@ -23,53 +24,34 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
   const [cpfErro, setCpfErro] = useState(false);
   const [cepErro, setCepErro] = useState(false);
 
-  // ---------- UTIL: parse currency robusto ----------
+  // normaliza sempre produtos[] internamente
+  const produtosLista = produtos || (produto ? [produto] : []);
+
   const parseCurrency = (v: string | number | undefined): number => {
     if (v === undefined || v === null) return 0;
     if (typeof v === "number") return v;
     let s = String(v).trim();
-    // remove qualquer prefixo tipo "R$" e qualquer caractere exceto dígito, ponto e vírgula, e sinal
     s = s.replace(/[^\d.,-]/g, "");
     if (!s) return 0;
-
-    // Se tem ',' e '.' — assumimos formato pt-BR (ex: 1.234,56) -> remover pontos (milhar) e trocar vírgula por ponto
-    if (s.includes(",") && s.includes(".")) {
-      s = s.replace(/\./g, "").replace(/,/g, ".");
-    } else if (s.includes(",")) {
-      // se só tem vírgula -> vírgula é decimal (50,00 -> 50.00)
-      s = s.replace(/,/g, ".");
-    }
-    // caso só tenha pontos (50.00 ou 1000) deixa como está
+    if (s.includes(",") && s.includes(".")) s = s.replace(/\./g, "").replace(/,/g, ".");
+    else if (s.includes(",")) s = s.replace(/,/g, ".");
     const n = parseFloat(s);
     return isNaN(n) ? 0 : n;
   };
 
-  const formatarPreco = (valor: string | number) => {
-    let num: number;
-    if (typeof valor === "string") {
-      num = parseCurrency(valor);
-    } else {
-      num = valor;
-    }
-    if (isNaN(num)) num = 0;
-    return num.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  };
+  const formatarPreco = (valor: string | number) =>
+    parseCurrency(valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-  // ---------- Validações ----------
   const validarCPF = (value: string) => {
     const clean = value.replace(/\D/g, "");
     return clean.length === 11 && !/^(\d)\1+$/.test(clean);
   };
   const validarCEP = (value: string) => value.replace(/\D/g, "").length === 8;
-  const validarEmail = (value: string) =>
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.toLowerCase());
+  const validarEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.toLowerCase());
 
-  // ---------- Consultar frete ----------
   const consultarFrete = async () => {
-    if (!validarCEP(cep)) {
-      setCepErro(true);
-      return;
-    }
+    if (!validarCEP(cep)) return setCepErro(true);
+
     setCepErro(false);
     setErro("");
     setLoadingFrete(true);
@@ -80,75 +62,41 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           cepDestino: cep.replace(/\D/g, ""),
-          peso: produto.weight,
-          largura: produto.width,
-          altura: produto.height,
-          comprimento: produto.length,
+          peso: produtosLista.reduce((t, p) => t + (p.weight || 0), 0),
+          largura: produtosLista.reduce((t, p) => t + (p.width || 0), 0),
+          altura: produtosLista.reduce((t, p) => t + (p.height || 0), 0),
+          comprimento: produtosLista.reduce((t, p) => t + (p.length || 0), 0),
         }),
       });
 
-      const data: { success: boolean; servicos?: Frete[]; error?: string } =
-        await res.json();
-
-      if (!res.ok || !data.success) {
-        setErro(data.error || "Erro ao obter frete");
-        setFretes([]);
-        setValorFrete(0);
-        setShippingMethod("");
-        return;
-      }
+      const data = await res.json();
+      if (!data.success) return setErro(data.error || "Erro no frete");
 
       const servicosValidos = data.servicos?.filter(
-        (f) => f.codigo === "04510" || f.codigo === "04014"
+        (f: Frete) => f.codigo === "04510" || f.codigo === "04014"
       );
 
-      if (!servicosValidos || servicosValidos.length === 0) {
-        setErro("Nenhum serviço PAC ou SEDEX disponível para este CEP.");
-        setFretes([]);
-        setValorFrete(0);
-        setShippingMethod("");
-        return;
-      }
-
-      setFretes(servicosValidos);
-      // reset seleção anterior
+      setFretes(servicosValidos || []);
       setShippingMethod("");
       setValorFrete(0);
-      setErro("");
-    } catch (err) {
-      console.error("Erro consultarFrete:", err);
-      setErro("Erro na conexão com o servidor.");
-      setFretes([]);
-      setValorFrete(0);
-      setShippingMethod("");
+    } catch {
+      setErro("Erro ao consultar frete.");
     } finally {
       setLoadingFrete(false);
     }
   };
 
-  // ---------- Valores ----------
-  // garante que convertemos preço do produto corretamente (independente do formato)
-  const valorProduto = parseCurrency(produto.price);
-
-  const valorTotal = valorProduto + valorFrete;
+  const valorProdutos = produtosLista.reduce((s, p) => s + parseCurrency(p.price), 0);
+  const valorTotal = valorProdutos + valorFrete;
 
   const isButtonDisabled =
-    !nome ||
-    !email ||
-    !validarEmail(email) ||
-    !cpf ||
-    !validarCPF(cpf) ||
-    !cep ||
-    !validarCEP(cep) ||
-    !shippingMethod;
+    !nome || !validarEmail(email) || !validarCPF(cpf) || !validarCEP(cep) || !shippingMethod;
 
-  // ---------- seleção de frete ----------
   const handleSelectFrete = (f: Frete | { codigo: string; valor: string | number }) => {
     setShippingMethod(f.codigo);
     setValorFrete(parseCurrency((f as any).valor));
   };
 
-  // ---------- Checkout ----------
   const iniciarCheckout = async () => {
     if (isButtonDisabled) return;
 
@@ -157,14 +105,12 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          items: [
-            {
-              name: produto.titulo,
-              price: produto.price,
-              images: [produto.images[0]],
-              quantity: 1,
-            },
-          ],
+          items: produtosLista.map((p) => ({
+            name: p.titulo,
+            price: p.price,
+            images: [p.images[0]],
+            quantity: 1,
+          })),
           shipping:
             shippingMethod === "retirada"
               ? { method: "retirada", valor: "0,00" }
@@ -176,7 +122,7 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
             email,
             cpf,
             cep,
-            valorProduto: valorProduto.toFixed(2),
+            valorProduto: valorProdutos.toFixed(2),
             valorFrete: valorFrete.toFixed(2),
             valorTotal: valorTotal.toFixed(2),
           },
@@ -184,27 +130,31 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
       });
 
       const data: { url?: string } = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert("Erro ao iniciar checkout");
-      }
+      if (data.url) window.location.href = data.url;
+      else alert("Erro ao iniciar checkout");
     } catch (err) {
       console.error(err);
       alert("Erro ao iniciar checkout");
     }
   };
 
-  // ---------- UI ----------
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-50 p-6">
       <div className="w-full max-w-xl bg-white rounded-2xl shadow-lg p-6">
-        <h2 className="text-2xl font-bold text-center mb-1">{produto.titulo}</h2>
-        <p className="text-center text-green-600 text-lg mb-4">
-          {formatarPreco(valorProduto)}
-        </p>
+        <h2 className="text-2xl font-bold text-center mb-1">Finalizar Compra</h2>
 
-        <div className="grid grid-cols-1 gap-3">
+        {produtosLista.map((p) => (
+          <div key={p.id} className="flex items-center gap-3 p-2 border-b">
+            <img src={p.images[0]} alt={p.titulo} className="w-16 h-16 rounded object-cover" />
+            <div className="flex-1">
+              <p className="font-semibold">{p.titulo}</p>
+              <p className="text-green-700">{formatarPreco(p.price)}</p>
+            </div>
+          </div>
+        ))}
+
+        {/* Formulário e frete */}
+        <div className="grid grid-cols-1 gap-3 mt-4">
           <input
             type="text"
             placeholder="Nome completo"
@@ -212,7 +162,6 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
             onChange={(e) => setNome(e.target.value)}
             className="border rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-200"
           />
-
           <input
             type="email"
             placeholder="Email"
@@ -284,7 +233,10 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
                 name="frete"
                 value="retirada"
                 checked={shippingMethod === "retirada"}
-                onChange={() => { setShippingMethod("retirada"); setValorFrete(0); }}
+                onChange={() => {
+                  setShippingMethod("retirada");
+                  setValorFrete(0);
+                }}
               />
               <Package className="w-5 h-5 text-gray-600" />
               <div>
@@ -317,8 +269,8 @@ export default function CheckoutForm({ produto }: CheckoutFormProps) {
 
           <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
             <div className="flex justify-between">
-              <span className="text-gray-600">Produto</span>
-              <span className="font-semibold">{formatarPreco(valorProduto)}</span>
+              <span className="text-gray-600">Produtos</span>
+              <span className="font-semibold">{formatarPreco(valorProdutos)}</span>
             </div>
             <div className="flex justify-between mt-2">
               <span className="text-gray-600">Frete</span>
