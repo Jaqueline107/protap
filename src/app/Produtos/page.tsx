@@ -89,7 +89,7 @@ function ProdutosContent() {
   const handleAddToCart = () => {
     addToCart({
     id: product.id,
-    titulo: product.titulo,
+    name: product.titulo,
     price: product.price,
     fullPrice: product.fullPrice,
     images: product.images,

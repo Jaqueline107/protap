@@ -3,12 +3,15 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
 export interface CartProduct {
-  id: any;
-  name: string; 
-  price: string;
-  quantity: number;
-  images: string[];
+  id: string | number;       // use string | number se o id for misto
+  name: string;              // nome do produto
+  price: string;             // preço com desconto
+  fullPrice: string;         // preço original
+  quantity: number;          // quantidade no carrinho
+  images: string[];          // imagens do produto
+  ano: string | null;        // ano selecionado, se aplicável
 }
+
 
 interface CartContextType {
   cart: CartProduct[];
