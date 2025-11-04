@@ -12,7 +12,7 @@ type Product = {
   id: string;
   name: string;
   fullPrice: string;
-  price: string;
+  price: number; // ✅ agora é number
   description: string;
   images: string[];
   ano?: string[];
@@ -22,9 +22,10 @@ type Product = {
 const parsePrice = (value: string): number =>
   parseFloat(value.replace(/[^\d,]/g, "").replace(",", ".")) || 0;
 
-const calculateDiscountPercentage = (fullPrice: string, price: string): number => {
+// Calcula desconto
+const calculateDiscountPercentage = (fullPrice: string, price: string | number): number => {
   const numericFullPrice = parsePrice(fullPrice);
-  const numericPrice = parsePrice(price);
+  const numericPrice = typeof price === "number" ? price : parsePrice(price);
   return Math.round(((numericFullPrice - numericPrice) / numericFullPrice) * 100);
 };
 
@@ -37,8 +38,6 @@ function ProdutosContent() {
   const [loading, setLoading] = useState(true);
   const [mainImage, setMainImage] = useState("");
   const [selectedAno, setSelectedAno] = useState<string | null>(null);
- 
-  console.log(setSelectedAno, setQuantity)
 
   const { addToCart } = useCart();
 
@@ -52,14 +51,14 @@ function ProdutosContent() {
       if (docSnap.exists()) {
         const data = docSnap.data() as Product;
 
-        const priceNumber = parsePrice(data.fullPrice);
-        const discountPrice = (priceNumber * 0.7).toFixed(2).replace(".", ",");
+        const fullPriceNumber = parsePrice(data.fullPrice);
+        const discountPriceNumber = parseFloat((fullPriceNumber * 0.7).toFixed(2));
 
         setProduct({
           ...data,
           id: docSnap.id,
-          price: `R$${discountPrice}`,
-          name: data.name || data.titulo, // garante que exista "name"
+          price: discountPriceNumber, // ✅ número
+          name: data.name || data.titulo,
           ano: Array.isArray(data.ano) ? data.ano : [],
         });
 
@@ -84,36 +83,36 @@ function ProdutosContent() {
 
   const discountPercentage = calculateDiscountPercentage(product.fullPrice, product.price);
 
-const handleBuyNow = () => {
-  const item = {
-    id: product.id,
-    titulo: product.titulo,
-    price: product.price,
-    fullPrice: product.fullPrice,
-    images: product.images,
-    quantity,
-    ano: selectedAno || null,
+  const handleBuyNow = () => {
+    const item = {
+      id: product.id,
+      titulo: product.titulo,
+      price: product.price,
+      fullPrice: product.fullPrice,
+      images: product.images,
+      quantity,
+      ano: selectedAno || null,
+    };
+
+    const params = new URLSearchParams();
+    params.append("items", JSON.stringify([item]));
+
+    router.push(`/Checkout?${params.toString()}`);
   };
 
-  const params = new URLSearchParams();
-  params.append("items", JSON.stringify([item])); // ✅ Envia como array, igual o carrinho
-
-  router.push(`/Checkout?${params.toString()}`); // ✅ Mesma rota usada no carrinho
-};
-
   const handleAddToCart = () => {
-  addToCart({
-    id: product.id,
-    titulo: product.titulo,
-    price: product.price,
-    fullPrice: product.fullPrice,
-    images: product.images,
-    quantity, // ✅ quantidade correta
-    ano: selectedAno || null,
-  });
-};
+    addToCart({
+      id: product.id,
+      titulo: product.titulo,
+      price: product.price,
+      fullPrice: product.fullPrice,
+      images: product.images,
+      quantity,
+      ano: selectedAno || null,
+    });
+  };
 
-return (
+  return (
     <div className="flex flex-col items-center">
       <main className="w-5/6 mt-20 flex flex-col lg:flex-row gap-12">
         {/* Imagens */}
@@ -153,7 +152,9 @@ return (
           <h2 className="text-2xl font-bold text-gray-400 line-through">{product.fullPrice}</h2>
 
           <div className="flex gap-3">
-            <p className="text-gray-700 text-4xl font-bold">{product.price}</p>
+            <p className="text-gray-700 text-4xl font-bold">
+              R${product.price.toFixed(2).replace(".", ",")}
+            </p>
             {discountPercentage > 0 && (
               <p className="text-3xl font-bold text-lime-500">{discountPercentage}% OFF</p>
             )}
@@ -174,7 +175,8 @@ return (
             >
               Adicionar ao Carrinho
             </button>
-             <div className="flex items-center gap-3">
+
+            <div className="flex items-center gap-3 mt-3">
               <button
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 className="px-3 py-1 border rounded-md font-semibold"
@@ -192,8 +194,9 @@ return (
               >
                 +
               </button>
-        </div>
+            </div>
           </div>
+
           <div className="mt-6 p-4 bg-gray-100 rounded-lg shadow-inner max-h-60 overflow-y-auto">
             <h2 className="text-xl font-semibold mb-2">Descrição do Produto</h2>
             <p className="text-gray-700 leading-relaxed">{product.description}</p>

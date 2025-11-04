@@ -153,7 +153,6 @@ export default function CheckoutForm({ produto, produtos }: CheckoutFormProps) {
         <label className="flex items-center gap-2 border p-3 rounded cursor-pointer">
           <input type="radio" name="frete" onChange={() => { setShippingMethod("retirada"); setValorFrete(0); }} />
           <Package size={18} />
-          <span className="font-medium">Retirar na loja — <span className="text-green-600 font-bold">GRÁTIS</span></span>
         </label>
 
         {fretes.map((f) => (
