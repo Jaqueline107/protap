@@ -37,6 +37,7 @@ export default function CheckoutPage({ searchParams }: CheckoutPageProps) {
             width: item.width || 0,
             height: item.height || 0,
             length: item.length || 0,
+            ano: Array.isArray(item.ano) ? item.ano : item.ano ? [item.ano] : null,
             anoSelecionado: item.ano || null,
           }));
           setProdutos(parsedItems);

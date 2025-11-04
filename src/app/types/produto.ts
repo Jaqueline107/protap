@@ -2,12 +2,13 @@ export interface Produto {
   id: string;
   titulo: string;
   price: string;
+  modelo: string;
   fullPrice?: string;
   description?: string;
   images: string[];
 
   // variações (se existir)
-  ano?: string | null;
+  ano?: string[] | null;        // ✅ Aceita lista
   anoSelecionado?: string | null; // ✅ Adicione isto
 
 

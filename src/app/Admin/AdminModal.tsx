@@ -16,7 +16,6 @@ export default function AdminProdutosModal() {
   const [formData, setFormData] = useState<ProdutoFormData>({
     titulo: "",
     modelo: "",
-    ano: [],
     images: [],
     fullPrice: "",
     price: "",
@@ -128,7 +127,7 @@ export default function AdminProdutosModal() {
       const produtoData: Produto = {
         ...formData,
         id,
-        name: formData.titulo,
+        titulo: formData.titulo,
       };
 
       await setDoc(doc(db, "produtos", id), produtoData);
@@ -150,7 +149,6 @@ export default function AdminProdutosModal() {
     setFormData({
       titulo: produto.titulo,
       modelo: produto.modelo || "",
-      ano: produto.ano || [],
       images: produto.images.length ? produto.images : [],
       fullPrice: produto.fullPrice,
       price: produto.price,
