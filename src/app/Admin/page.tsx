@@ -23,12 +23,12 @@ export default function AdminPage() {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-
   const [showAddAdmin, setShowAddAdmin] = useState(false);
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [newAdminPassword, setNewAdminPassword] = useState("");
   const [message, setMessage] = useState("");
   const [showLinkGoogle, setShowLinkGoogle] = useState(false);
+  console.log(isAdmin, setMessage)
 
   // Checa autenticação e permissões
   useEffect(() => {

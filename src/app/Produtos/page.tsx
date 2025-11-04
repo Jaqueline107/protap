@@ -32,11 +32,13 @@ function ProdutosContent() {
   const searchParams = useSearchParams();
   const productId = searchParams.get("id");
   const router = useRouter();
-
+  const [quantity, setQuantity] = useState(1);
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [mainImage, setMainImage] = useState("");
   const [selectedAno, setSelectedAno] = useState<string | null>(null);
+ 
+  console.log(setSelectedAno, setQuantity)
 
   const { addToCart } = useCart();
 
@@ -82,23 +84,36 @@ function ProdutosContent() {
 
   const discountPercentage = calculateDiscountPercentage(product.fullPrice, product.price);
 
-  const handleBuyNow = () => {
-    router.push(`/Checkout?productId=${product.id}`);
-  };
-
-  const handleAddToCart = () => {
-    addToCart({
+const handleBuyNow = () => {
+  const item = {
     id: product.id,
-    name: product.titulo,
+    titulo: product.titulo,
     price: product.price,
     fullPrice: product.fullPrice,
     images: product.images,
-    quantity: 1,
+    quantity,
     ano: selectedAno || null,
-  });
   };
 
-  return (
+  const params = new URLSearchParams();
+  params.append("items", JSON.stringify([item])); // ✅ Envia como array, igual o carrinho
+
+  router.push(`/Checkout?${params.toString()}`); // ✅ Mesma rota usada no carrinho
+};
+
+  const handleAddToCart = () => {
+  addToCart({
+    id: product.id,
+    titulo: product.titulo,
+    price: product.price,
+    fullPrice: product.fullPrice,
+    images: product.images,
+    quantity, // ✅ quantidade correta
+    ano: selectedAno || null,
+  });
+};
+
+return (
     <div className="flex flex-col items-center">
       <main className="w-5/6 mt-20 flex flex-col lg:flex-row gap-12">
         {/* Imagens */}
@@ -159,8 +174,26 @@ function ProdutosContent() {
             >
               Adicionar ao Carrinho
             </button>
-          </div>
+             <div className="flex items-center gap-3">
+              <button
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                className="px-3 py-1 border rounded-md font-semibold"
+              >
+                -
+              </button>
 
+              <span className="px-4 py-1 border rounded-md text-blue-900 font-semibold bg-gray-50">
+                {quantity}
+              </span>
+
+              <button
+                onClick={() => setQuantity(quantity + 1)}
+                className="px-3 py-1 border rounded-md font-semibold"
+              >
+                +
+              </button>
+        </div>
+          </div>
           <div className="mt-6 p-4 bg-gray-100 rounded-lg shadow-inner max-h-60 overflow-y-auto">
             <h2 className="text-xl font-semibold mb-2">Descrição do Produto</h2>
             <p className="text-gray-700 leading-relaxed">{product.description}</p>

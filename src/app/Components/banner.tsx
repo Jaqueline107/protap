@@ -5,7 +5,7 @@ import CarpetSelector from "../CarpetSelector/page";
 
 export default function Banner() {
   return (
-    <section className="w-full md:h-96 h-80 bg-gradient-to-r from-black via-[#1C1C1C] to-black text-white">
+    <section className="w-full md:h-auto h-80 bg-gradient-to-r from-black via-[#1C1C1C] to-black text-white">
       <div className="max-w-6xl -mt-14 mx-auto px-6 lg:px-12 py-12 md:py-20 flex flex-col md:flex-row items-center justify-between gap-10">
         {/* Texto do Banner */}
         <div className="flex flex-col items-center md:items-start text-center md:text-left md:w-1/2">

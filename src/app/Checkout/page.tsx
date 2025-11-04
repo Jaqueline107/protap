@@ -24,7 +24,7 @@ export default function CheckoutPage({ searchParams }: CheckoutPageProps) {
 
     const fetchData = async () => {
       try {
-        // Caso venha do carrinho
+        // ✅ Veio do carrinho
         if (params.items) {
           const parsedItems: Produto[] = JSON.parse(params.items).map((item: any) => ({
             id: item.id,
@@ -32,6 +32,7 @@ export default function CheckoutPage({ searchParams }: CheckoutPageProps) {
             price: item.price,
             fullPrice: item.fullPrice,
             images: item.images,
+            quantity: item.quantity || 1,
             weight: item.weight || 0,
             width: item.width || 0,
             height: item.height || 0,
@@ -42,20 +43,22 @@ export default function CheckoutPage({ searchParams }: CheckoutPageProps) {
           return;
         }
 
-        // Caso venha da página de produto
+        // ✅ Veio da página do produto
         if (params.productId) {
           const docRef = doc(db, "produtos", params.productId);
           const docSnap = await getDoc(docRef);
 
           if (docSnap.exists()) {
             const data = docSnap.data() as Omit<Produto, "id" | "price" | "anoSelecionado">;
-            const fullPrice = parseFloat(data.fullPrice.replace("R$", "").replace(",", "."));
-            const price = (fullPrice * 0.7).toFixed(2);
+            const fullPriceValue = data.fullPrice
+              ? parseFloat(data.fullPrice.replace("R$", "").replace(",", "."))
+              : 0;
+            const priceValue = fullPriceValue * 0.7;
 
             setProduto({
               id: docSnap.id,
               ...data,
-              price: `R$${price.replace(".", ",")}`,
+              price: `R$${priceValue.toFixed(2).replace(".", ",")}`,
               anoSelecionado: params.ano || (data.ano ? data.ano[0] : null),
             });
           } else {
@@ -76,5 +79,10 @@ export default function CheckoutPage({ searchParams }: CheckoutPageProps) {
     return <p className="p-8 text-center">Carregando produtos para checkout...</p>;
   }
 
-  return <CheckoutForm produto={produto || undefined} produtos={produtos || undefined} />;
+  return (
+    <CheckoutForm
+      produto={produto ?? undefined}
+      produtos={produtos ?? undefined}
+    />
+  );
 }

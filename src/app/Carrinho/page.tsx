@@ -11,9 +11,15 @@ export default function CarrinhoPage() {
   const router = useRouter();
 
   const calcularTotal = () =>
-    cart.reduce((total, item) =>
-      total + parseFloat(item.price.replace("R$", "").replace(",", ".")) * item.quantity
-    , 0).toFixed(2);
+    cart
+      .reduce(
+        (total, item) =>
+          total +
+          parseFloat(item.price.replace("R$", "").replace(",", ".")) *
+            item.quantity,
+        0
+      )
+      .toFixed(2);
 
   const handleCheckout = () => {
     const params = new URLSearchParams();
@@ -25,7 +31,10 @@ export default function CarrinhoPage() {
     return (
       <div className="text-center py-20">
         <h2 className="text-xl font-semibold">Seu carrinho está vazio</h2>
-        <Link href="/" className="mt-6 inline-block bg-red-600 text-white px-6 py-3 rounded-md">
+        <Link
+          href="/"
+          className="mt-6 inline-block bg-red-600 text-white px-6 py-3 rounded-md"
+        >
           Ver Produtos
         </Link>
       </div>
@@ -37,19 +46,48 @@ export default function CarrinhoPage() {
       <h1 className="text-3xl font-bold mb-8">Seu Carrinho</h1>
 
       {cart.map((item, idx) => (
-        <div key={idx} className="flex items-center gap-6 p-4 bg-white rounded-lg shadow mb-4">
-          <Image src={item.images[0]} width={120} height={120} alt={item.name} className="rounded-lg"/>
+        <div
+          key={idx}
+          className="flex items-center gap-6 p-4 bg-white rounded-lg shadow mb-4"
+        >
+          <Image
+            src={item.images[0]}
+            width={120}
+            height={120}
+            alt={item.titulo}
+            className="rounded-lg"
+          />
+
           <div className="flex-1">
-            <h2 className="font-semibold text-lg">{item.name}</h2>
+            <h2 className="font-semibold text-lg">{item.titulo}</h2>
             <p className="text-green-600 font-bold">{item.price}</p>
 
-            <div className="mt-3 flex items-center gap-4">
-              <button onClick={() => updateQuantity(item.name, Math.max(1, item.quantity - 1))}>-</button>
-              <span>{item.quantity}</span>
-              <button onClick={() => updateQuantity(item.name, item.quantity + 1)}>+</button>
+            <div className="mt-3 flex items-center gap-3">
+              <button
+                className="px-3 py-1 border rounded-md text-lg"
+                onClick={() =>
+                  updateQuantity(item.titulo, Math.max(1, item.quantity - 1))
+                }
+              >
+                -
+              </button>
+
+              <span className="px-4 py-1 border rounded-md bg-gray-50">
+                {item.quantity}
+              </span>
+
+              <button
+                className="px-3 py-1 border rounded-md text-lg"
+                onClick={() => updateQuantity(item.titulo, item.quantity + 1)}
+              >
+                +
+              </button>
             </div>
 
-            <button className="text-red-600 mt-2 underline" onClick={() => removeFromCart(item.name)}>
+            <button
+              className="text-red-600 mt-2 underline"
+              onClick={() => removeFromCart(item.titulo)}
+            >
               Remover
             </button>
           </div>
@@ -57,7 +95,9 @@ export default function CarrinhoPage() {
       ))}
 
       <div className="bg-gray-100 p-6 rounded-lg shadow-md mt-6">
-        <p className="text-lg font-bold">Subtotal: R$ {calcularTotal().replace(".", ",")}</p>
+        <p className="text-lg font-bold">
+          Subtotal: R$ {calcularTotal().replace(".", ",")}
+        </p>
 
         <button
           onClick={handleCheckout}
