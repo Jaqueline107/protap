@@ -59,7 +59,7 @@ export default function CheckoutPage({ searchParams }: CheckoutPageProps) {
             setProduto({
               id: docSnap.id,
               ...data,
-              price: `R$${priceValue.toFixed(2).replace(".", ",")}`,
+              price: priceValue,
               anoSelecionado: params.ano || (data.ano ? data.ano[0] : null),
             });
           } else {
