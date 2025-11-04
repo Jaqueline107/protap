@@ -18,7 +18,7 @@ export default function AdminProdutosModal() {
     modelo: "",
     images: [],
     fullPrice: "",
-    price: "",
+    price: 0,
     anoSelecionado: null,
     width: 0,
     height: 0,
@@ -44,7 +44,7 @@ export default function AdminProdutosModal() {
             ano: data.ano || [],
             images: data.images || [],
             fullPrice: String(data.fullPrice || ""),
-            price: String(data.price || ""),
+            price: Number(data.price || ""),
             anoSelecionado: data.anoSelecionado || null,
             width: data.width || 0,
             height: data.height || 0,
@@ -213,7 +213,7 @@ export default function AdminProdutosModal() {
                 <tr key={p.id} className="text-center">
                   <td className="border p-3">{p.titulo}</td>
                   <td className="border p-3">
-                    R$ {parseFloat(p.price || "0").toFixed(2)}
+                  R$ {(Number(p.price) || 0).toFixed(2)}
                   </td>
                   <td className="border p-3 flex gap-2 justify-center flex-wrap">
                     <button

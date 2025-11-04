@@ -1,44 +1,81 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import Stripe from "stripe";
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+import nodemailer from "nodemailer";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-08-27.basil",
 });
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const sig = req.headers.get("stripe-signature")!;
-  const body = await req.text();
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    );
+    const rawBody = await req.text();
+    event = stripe.webhooks.constructEvent(rawBody, sig, endpointSecret);
   } catch (err: any) {
-    console.error("⚠️ Webhook signature verification failed.", err.message);
+    console.error("⚠️ Erro ao validar webhook:", err.message);
     return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
-  // ✅ QUANDO O PAGAMENTO É CONFIRMADO
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as any;
 
-    console.log("✅ Pagamento confirmado!");
-    console.log("Email do cliente:", session.customer_details.email);
-    console.log("Valor:", session.amount_total);
+    const customerEmail = session.customer_details.email;
+    const orderId = session.id;
 
-    // TODO: Enviar email ao cliente
-    // TODO: Enviar email ao admin
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT),
+      secure: true,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    // ✅ E-MAIL PARA O CLIENTE
+    await transporter.sendMail({
+      from: `Protapcar <${process.env.SMTP_USER}>`,
+      to: customerEmail,
+      subject: "Confirmação de Pagamento - Protapcar",
+      html: `
+        <div style="font-family: Arial; color: #222;">
+          <h2>Pagamento Confirmado ✅</h2>
+          <p>Olá, tudo bem?</p>
+          <p>Informamos que seu pedido <strong>${orderId}</strong> foi confirmado com sucesso.</p>
+          <p>Agora ele está sendo separado e enviado para a transportadora.</p>
+          <p>Você receberá atualizações assim que o pedido for despachado.</p>
+          <br>
+          <p>Agradecemos sua confiança em nossa loja.</p>
+          <p>Atenciosamente,<br><strong>Equipe Protapcar</strong></p>
+        </div>
+      `,
+    });
+
+    // ✅ E-MAIL PARA VOCÊ (ADMIN)
+    await transporter.sendMail({
+      from: `Protapcar <${process.env.SMTP_USER}>`,
+      to: process.env.ADMIN_EMAIL,
+      subject: `Novo Pedido Confirmado - ${orderId}`,
+      html: `
+        <div style="font-family: Arial; color: #222;">
+          <h2>Nova Venda Recebida 📦</h2>
+          <p><strong>ID do Pedido:</strong> ${orderId}</p>
+          <p><strong>Email do Comprador:</strong> ${customerEmail}</p>
+          <br>
+          <p>Verifique os detalhes no painel Stripe.</p>
+          <p>Atenciosamente,<br><strong>Sistema Automático Protapcar</strong></p>
+        </div>
+      `,
+    });
+
+    console.log("✅ E-mails enviados com sucesso.");
   }
 
   return NextResponse.json({ received: true });
 }
+
+export const dynamic = "force-dynamic";
