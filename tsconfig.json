@@ -23,6 +23,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/produtos", "src/app/sobre"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/produtos", "src/app/sobre", "src/app/api/checkout_sessions/webhook/webhook"],
   "exclude": ["node_modules"]
 }
