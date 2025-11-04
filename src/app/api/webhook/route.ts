@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import nodemailer from "nodemailer";
+import { emailCliente, emailAdmin } from "@/app/lib/emails";
+import { sendEmail } from "@/app/lib/sendEmail";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-08-27.basil",
@@ -72,7 +74,24 @@ export async function POST(req: Request) {
       `,
     });
 
+    if (event.type === "checkout.session.completed") {
+    const session = event.data.object as any;
+
+    const nome = session.customer_details?.name || "Cliente";
+    const email = session.customer_details?.email || "";
+    const pedidoId = session.id;
+    const cep = session.customer_details?.address?.postal_code || "";
+
     console.log("✅ E-mails enviados com sucesso.");
+
+
+    // Email para cliente
+    await sendEmail(email, "✅ Pedido Confirmado - Protap Car", emailCliente(nome, pedidoId));
+
+    // Email para admin
+    await sendEmail(process.env.ADMIN_EMAIL!, "🛒 Nova Venda Recebida", emailAdmin(pedidoId, nome, cep));
+  }
+
   }
 
   return NextResponse.json({ received: true });

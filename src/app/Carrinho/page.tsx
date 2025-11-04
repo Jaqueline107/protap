@@ -15,7 +15,7 @@ export default function CarrinhoPage() {
       .reduce(
         (total, item) =>
           total +
-          parseFloat(item.price.replace("R$", "").replace(",", ".")) *
+          parseFloat(String(item.price).replace("R$", "").replace(",", ".")) *
             item.quantity,
         0
       )
