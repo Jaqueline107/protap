@@ -38,9 +38,8 @@ function ProdutosContent() {
   const [loading, setLoading] = useState(true);
   const [mainImage, setMainImage] = useState("");
   const [selectedAno, setSelectedAno] = useState<string | null>(null);
-
+  console.log(setSelectedAno)
   const { addToCart } = useCart();
-
   const fetchProduct = async () => {
     if (!productId) return;
 
