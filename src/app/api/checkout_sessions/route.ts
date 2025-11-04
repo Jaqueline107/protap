@@ -10,15 +10,15 @@ const stripe = new Stripe(stripeSecretKey, { apiVersion: "2025-08-27.basil" });
 
 interface CartItem {
   name: string;
-  price: string; // ex: "R$50,00"
+  price: number; // ✅ já como número
   images: string[];
   quantity: number;
   ano?: string | null;
 }
 
 interface ShippingInfo {
-  method: "04014" | "04510" | "retirada";
-  valor: string; // ex: "25,30" ou "0"
+  method: string;
+  valor: string; // ainda vem do correio como string tipo "25,40"
 }
 
 interface CheckoutRequestBody {
@@ -31,17 +31,15 @@ export async function POST(req: Request) {
     const body: CheckoutRequestBody = await req.json();
     const { items, shipping } = body;
 
-    if (!items || items.length === 0)
+    if (!items || items.length === 0) {
       return new Response(JSON.stringify({ error: "Carrinho vazio" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
+    }
 
-    // Cria line items para Stripe
     const lineItems = items.map((item) => {
-      const amount = Math.round(
-        parseFloat(item.price.replace(/[^\d,\.]/g, "").replace(",", ".")) * 100
-      );
+      const amount = Math.round(item.price * 100); // ✅ sem replace()
 
       return {
         price_data: {
@@ -58,22 +56,17 @@ export async function POST(req: Request) {
       };
     });
 
-    // Adiciona frete
-    if (shipping && shipping.valor) {
-      const freteNome =
-        shipping.method === "04014"
-          ? "Frete (Sedex)"
-          : shipping.method === "04510"
-          ? "Frete (PAC)"
-          : "Retirada na Loja";
-
-      const freteAmount = Math.round(parseFloat(shipping.valor.replace(",", ".")) * 100);
+    // ✅ Adiciona frete se existir
+    if (shipping?.valor) {
+      const freteAmount = Math.round(
+        parseFloat(shipping.valor.replace(",", ".")) * 100
+      );
 
       lineItems.push({
         price_data: {
           currency: "brl",
           product_data: {
-            name: freteNome,
+            name: "Frete",
             images: []
           },
           unit_amount: freteAmount,
@@ -82,7 +75,7 @@ export async function POST(req: Request) {
       });
     }
 
-    // Cria sessão Stripe
+    // ✅ Cria sessão Stripe
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items: lineItems,
@@ -93,6 +86,7 @@ export async function POST(req: Request) {
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { "Content-Type": "application/json" },
     });
+
   } catch (err) {
     console.error("Erro no checkout:", err);
     return new Response(

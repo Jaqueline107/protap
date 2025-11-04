@@ -33,7 +33,6 @@ export default function CheckoutForm({ produto, produtos }: CheckoutFormProps) {
     0
   );
 
-  // Inputs
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [cpf, setCpf] = useState("");
@@ -43,14 +42,16 @@ export default function CheckoutForm({ produto, produtos }: CheckoutFormProps) {
   const [shippingMethod, setShippingMethod] = useState<"retirada" | string>("");
 
   const [valorFrete, setValorFrete] = useState(0);
-  const [loadingFrete, setLoadingFrete] = useState(false); // ✅ LOADING
+
+  const [loadingFrete, setLoadingFrete] = useState(false);
+  const [loadingCheckout, setLoadingCheckout] = useState(false);
 
   const valorTotal = valorProdutos + valorFrete;
 
   const consultarFrete = async () => {
     if (cep.replace(/\D/g, "").length !== 8) return alert("CEP inválido!");
 
-    setLoadingFrete(true); // ✅ INICIA LOADING
+    setLoadingFrete(true);
 
     try {
       const res = await fetch("/api/frete", {
@@ -68,7 +69,7 @@ export default function CheckoutForm({ produto, produtos }: CheckoutFormProps) {
       const data = await res.json();
       setFretes(data.servicos || []);
     } finally {
-      setLoadingFrete(false); // ✅ FINALIZA LOADING
+      setLoadingFrete(false);
     }
   };
 
@@ -77,32 +78,38 @@ export default function CheckoutForm({ produto, produtos }: CheckoutFormProps) {
       return alert("Preencha todos os campos e selecione o frete.");
     }
 
-    const res = await fetch("/api/checkout_sessions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        payment_method_types: ["pix", "card"],
-        items: produtosLista.map((p: any) => ({
-          name: p.titulo,
-          price: parseCurrency(p.price),
-          images: p.images,
-          quantity: p.quantity ?? 1,
-        })),
-        shipping:
-          shippingMethod === "retirada"
-            ? { method: "retirada", valor: "0,00" }
-            : fretes.find((f) => f.codigo === shippingMethod),
+    setLoadingCheckout(true);
 
-        meta: { nome, email, cpf, cep, valorProdutos, valorFrete, valorTotal },
-      }),
-    });
+    try {
+      const res = await fetch("/api/checkout_sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          payment_method_types: ["pix", "card"],
+          items: produtosLista.map((p: any) => ({
+            name: p.titulo,
+            price: parseCurrency(p.price),
+            images: p.images,
+            quantity: p.quantity ?? 1,
+          })),
+          shipping:
+            shippingMethod === "retirada"
+              ? { method: "retirada", valor: "0,00" }
+              : fretes.find((f) => f.codigo === shippingMethod),
 
-    const data = await res.json();
-    if (data.url) {
-      clearCart();
-      window.location.href = data.url;
-    } else {
-      alert("Erro ao iniciar pagamento.");
+          meta: { nome, email, cpf, cep, valorProdutos, valorFrete, valorTotal },
+        }),
+      });
+
+      const data = await res.json();
+      if (data.url) {
+        clearCart();
+        window.location.href = data.url;
+      } else {
+        alert("Erro ao iniciar pagamento.");
+      }
+    } finally {
+      setLoadingCheckout(false);
     }
   };
 
@@ -123,22 +130,20 @@ export default function CheckoutForm({ produto, produtos }: CheckoutFormProps) {
       ))}
 
       <div className="mt-6 space-y-3">
-
-        <input className="w-full p-3 border rounded" placeholder="Nome completo" value={nome} onChange={(e) => setNome(e.target.value)} />
-        <input className="w-full p-3 border rounded" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input className="w-full p-3 border rounded" placeholder="CPF" value={cpf} onChange={(e) => setCpf(e.target.value)} />
+        <input className={`w-full p-3 border rounded ${!nome ? "border-red-500" : ""}`} placeholder="Nome completo" value={nome} onChange={(e) => setNome(e.target.value)} />
+        <input className={`w-full p-3 border rounded ${!email ? "border-red-500" : ""}`} placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input className={`w-full p-3 border rounded ${!cpf ? "border-red-500" : ""}`} placeholder="CPF" value={cpf} onChange={(e) => setCpf(e.target.value)} />
 
         <div className="flex gap-2">
-          <input className="flex-1 p-3 border rounded" placeholder="CEP" value={cep} onChange={(e) => setCep(e.target.value)} />
+          <input className={`flex-1 p-3 border rounded ${!cep ? "border-red-500" : ""}`} placeholder="CEP" value={cep} onChange={(e) => setCep(e.target.value)} />
 
-          {/* ✅ BOTÃO DE CALCULAR COM LOADING */}
           <button
             onClick={consultarFrete}
             disabled={loadingFrete}
-            className="px-4 py-3 rounded text-white font-semibold transition bg-blue-500 disabled:bg-blue-300"
+            className="px-3 py-2 bg-blue-600 text-white rounded disabled:bg-blue-300"
           >
             {loadingFrete ? (
-              <div className="w-5 h-5 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
+              <div className="w-6 h-6 border-4 border-blue-200 border-t-blue-700 rounded-full animate-spin mx-auto"></div>
             ) : (
               "Calcular"
             )}
@@ -148,7 +153,7 @@ export default function CheckoutForm({ produto, produtos }: CheckoutFormProps) {
         <label className="flex items-center gap-2 border p-3 rounded cursor-pointer">
           <input type="radio" name="frete" onChange={() => { setShippingMethod("retirada"); setValorFrete(0); }} />
           <Package size={18} />
-          <span className="font-medium">Retirada na loja — <span className="text-green-600 font-bold">GRÁTIS</span></span>
+          <span className="font-medium">Retirar na loja — <span className="text-green-600 font-bold">GRÁTIS</span></span>
         </label>
 
         {fretes.map((f) => (
@@ -160,11 +165,21 @@ export default function CheckoutForm({ produto, produtos }: CheckoutFormProps) {
         ))}
 
         <div className="border-t pt-4 mt-4">
-          <p className="text-2xl font-bold text-green-700">Total: {formatarPreco(valorTotal)}</p>
+          <p className="text-2xl font-bold text-green-700">
+            Total: {formatarPreco(valorTotal)}
+          </p>
         </div>
 
-        <button onClick={iniciarCheckout} className="mt-4 w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700">
-          Finalizar Compra
+        <button
+          onClick={iniciarCheckout}
+          disabled={loadingCheckout}
+          className="mt-4 w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-green-300"
+        >
+          {loadingCheckout ? (
+            <div className="w-6 h-6 border-4 border-green-200 border-t-green-700 rounded-full animate-spin mx-auto"></div>
+          ) : (
+            "Finalizar Compra"
+          )}
         </button>
       </div>
     </div>
