@@ -15,7 +15,7 @@ import { db } from "../../db/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import AdminProdutosModal from "./AdminModal";
 
-const SECRET = process.env.NEXT_PUBLIC_JWT_SECRET || "sua_chave_secreta_super_segura";
+// const SECRET = process.env.NEXT_PUBLIC_JWT_SECRET || "sua_chave_secreta_super_segura";
 
 export default function AdminPage() {
   const router = useRouter();

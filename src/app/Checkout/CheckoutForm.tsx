@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useCart } from "../context/CartContext";
-import { Truck, Package } from "lucide-react";
+import { Truck } from "lucide-react";
 import type { Frete } from "../api/frete/route";
 import type { Produto } from "../types/produto";
 import type { CartProduct } from "../types/cartproduct";
