@@ -73,7 +73,7 @@ export default function Home() {
     <div className="flex flex-col items-center">
       <Banner />
 
-      <main id="produtos" className="w-5/6 mt-12 sm:mt-20">
+      <main id="produtos" className="w-5/6 mt-5 sm:mt-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Card de "Ver Benefícios" */}
           <div className="hidden md:flex w-full md:w-80 p-6 bg-gradient-to-br from-gray-100 to-white rounded-2xl shadow-lg hover:shadow-2xl transition-shadow duration-300 flex-col">

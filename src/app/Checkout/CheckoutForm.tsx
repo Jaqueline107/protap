@@ -150,11 +150,6 @@ export default function CheckoutForm({ produto, produtos }: CheckoutFormProps) {
           </button>
         </div>
 
-        <label className="flex items-center gap-2 border p-3 rounded cursor-pointer">
-          <input type="radio" name="frete" onChange={() => { setShippingMethod("retirada"); setValorFrete(0); }} />
-          <Package size={18} />
-        </label>
-
         {fretes.map((f) => (
           <label key={f.codigo} className="flex items-center gap-2 border p-3 rounded cursor-pointer">
             <input type="radio" name="frete" onChange={() => { setShippingMethod(f.codigo); setValorFrete(parseCurrency(f.valor)); }} />

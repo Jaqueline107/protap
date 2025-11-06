@@ -14,7 +14,6 @@ import {
 import { db } from "../../db/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import AdminProdutosModal from "./AdminModal";
-import jwt from "jsonwebtoken";
 
 const SECRET = process.env.NEXT_PUBLIC_JWT_SECRET || "sua_chave_secreta_super_segura";
 
@@ -42,12 +41,16 @@ export default function AdminPage() {
           setIsAdmin(true);
 
           // Gera JWT e salva no cookie
-          const token = jwt.sign(
-            { uid: currentUser.uid, email: currentUser.email },
-            SECRET,
-            { expiresIn: "2h" }
-          );
-          document.cookie = `admin-token=${token}; path=/; max-age=${2 * 60 * 60}`;
+          
+          await fetch("/api/admin-login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            uid: currentUser.uid,
+            email: currentUser.email
+          }),
+        });
+
         } else {
           alert("❌ Você não tem permissão de administrador!");
           await signOut(auth);
