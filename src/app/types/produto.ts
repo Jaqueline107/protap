@@ -5,6 +5,7 @@ export interface Produto {
   modelo: string;
   fullPrice?: string;
   description?: string;
+  marca?: string;
   images: string[];
 
   // variações (se existir)

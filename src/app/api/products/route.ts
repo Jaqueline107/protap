@@ -10,17 +10,21 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-// Tipagem de produto (ajuste conforme os campos do seu Firestore)
+// Tipagem de produto
 interface Product {
   id: string;
-  marca: string;
-  modelo: string;
-  ano: string[]; // array de anos disponíveis
+  marca: string;   // ex: Volkswagen
+  modelo: string;  // ex: Gol G6
   name: string;
-  description: string;
   images: string[];
-  price: string;
-  fullPrice: string;
+  price: number;
+  fullPrice?: number;
+  pesoFrete?: number;
+  pesoCubico?: number;
+  length: number;
+  width: number;
+  height: number;
+  weight: number;
 }
 
 export async function GET(req: Request) {
@@ -28,14 +32,12 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const marca = searchParams.get("marca");
     const modelo = searchParams.get("modelo");
-    const ano = searchParams.get("ano");
 
     let query: FirebaseFirestore.Query<FirebaseFirestore.DocumentData> =
       db.collection("produtos");
 
     if (marca) query = query.where("marca", "==", marca);
     if (modelo) query = query.where("modelo", "==", modelo);
-    if (ano) query = query.where("ano", "array-contains", ano);
 
     const snapshot = await query.get();
 

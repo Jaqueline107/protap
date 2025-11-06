@@ -14,8 +14,7 @@ import {
 import { db } from "../../db/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import AdminProdutosModal from "./AdminModal";
-
-// const SECRET = process.env.NEXT_PUBLIC_JWT_SECRET || "sua_chave_secreta_super_segura";
+import Link from "next/link";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -144,14 +143,13 @@ export default function AdminPage() {
       </div>
     );
   }
-
+  
   // Painel de admin logado
   return (
     <div className="p-8 max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-bold">Painel de Controle</h1>
-
-        <div className="relative">
+        <h1 className="text-3xl font-bold">Painel de Controle</h1>
+         <div className="relative">
           <img
             src={user.photoURL || ""}
             alt="Avatar"
@@ -201,7 +199,7 @@ export default function AdminPage() {
           )}
         </div>
       </div>
-
+     
       {/* Modal/AdminProdutosModal */}
       <AdminProdutosModal />
     </div>

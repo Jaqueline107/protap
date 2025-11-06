@@ -33,20 +33,44 @@ export default function CheckoutForm({ produto, produtos }: CheckoutFormProps) {
     0
   );
 
+  // CAMPOS DO CLIENTE
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [cpf, setCpf] = useState("");
+
+  // ENDEREÇO COMPLETO
   const [cep, setCep] = useState("");
+  const [rua, setRua] = useState("");
+  const [numero, setNumero] = useState("");
+  const [complemento, setComplemento] = useState("");
+  const [bairro, setBairro] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [estado, setEstado] = useState("");
 
   const [fretes, setFretes] = useState<Frete[]>([]);
-  const [shippingMethod, setShippingMethod] = useState<"retirada" | string>("");
-
+  const [shippingMethod, setShippingMethod] = useState("");
   const [valorFrete, setValorFrete] = useState(0);
 
   const [loadingFrete, setLoadingFrete] = useState(false);
   const [loadingCheckout, setLoadingCheckout] = useState(false);
 
   const valorTotal = valorProdutos + valorFrete;
+
+  // AUTOCOMPLETE VIA CEP
+  const buscarEndereco = async (cep: string) => {
+    const cleanCep = cep.replace(/\D/g, "");
+    if (cleanCep.length !== 8) return;
+
+    const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+    const data = await res.json();
+
+    if (!data.erro) {
+      setRua(data.logradouro);
+      setBairro(data.bairro);
+      setCidade(data.localidade);
+      setEstado(data.uf);
+    }
+  };
 
   const consultarFrete = async () => {
     if (cep.replace(/\D/g, "").length !== 8) return alert("CEP inválido!");
@@ -74,8 +98,8 @@ export default function CheckoutForm({ produto, produtos }: CheckoutFormProps) {
   };
 
   const iniciarCheckout = async () => {
-    if (!nome || !email || !cpf || (!shippingMethod && fretes.length > 0)) {
-      return alert("Preencha todos os campos e selecione o frete.");
+    if (!nome || !email || !cpf || !rua || !numero || !bairro || !cidade || !estado) {
+      return alert("Preencha todos os campos do endereço.");
     }
 
     setLoadingCheckout(true);
@@ -97,7 +121,15 @@ export default function CheckoutForm({ produto, produtos }: CheckoutFormProps) {
               ? { method: "retirada", valor: "0,00" }
               : fretes.find((f) => f.codigo === shippingMethod),
 
-          meta: { nome, email, cpf, cep, valorProdutos, valorFrete, valorTotal },
+          meta: {
+            nome, email, cpf,
+            endereco: {
+              cep, rua, numero, complemento, bairro, cidade, estado
+            },
+            valorProdutos,
+            valorFrete,
+            valorTotal,
+          },
         }),
       });
 
@@ -117,6 +149,7 @@ export default function CheckoutForm({ produto, produtos }: CheckoutFormProps) {
     <div className="p-6 max-w-xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">Finalizar Compra</h1>
 
+      {/* LISTA DE PRODUTOS */}
       {produtosLista.map((p: any) => (
         <div key={p.id} className="flex items-center gap-3 border-b py-3">
           <img src={p.images?.[0]} className="w-16 h-16 rounded" alt={p.titulo} />
@@ -129,26 +162,25 @@ export default function CheckoutForm({ produto, produtos }: CheckoutFormProps) {
         </div>
       ))}
 
+      {/* CAMPOS */}
       <div className="mt-6 space-y-3">
-        <input className={`w-full p-3 border rounded ${!nome ? "border-red-500" : ""}`} placeholder="Nome completo" value={nome} onChange={(e) => setNome(e.target.value)} />
-        <input className={`w-full p-3 border rounded ${!email ? "border-red-500" : ""}`} placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input className={`w-full p-3 border rounded ${!cpf ? "border-red-500" : ""}`} placeholder="CPF" value={cpf} onChange={(e) => setCpf(e.target.value)} />
+        <input className="w-full p-3 border rounded" placeholder="Nome completo" value={nome} onChange={(e) => setNome(e.target.value)} />
+        <input className="w-full p-3 border rounded" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input className="w-full p-3 border rounded" placeholder="CPF" value={cpf} onChange={(e) => setCpf(e.target.value)} />
 
         <div className="flex gap-2">
-          <input className={`flex-1 p-3 border rounded ${!cep ? "border-red-500" : ""}`} placeholder="CEP" value={cep} onChange={(e) => setCep(e.target.value)} />
-
-          <button
-            onClick={consultarFrete}
-            disabled={loadingFrete}
-            className="px-3 py-2 bg-blue-600 text-white rounded disabled:bg-blue-300"
-          >
-            {loadingFrete ? (
-              <div className="w-6 h-6 border-4 border-blue-200 border-t-blue-700 rounded-full animate-spin mx-auto"></div>
-            ) : (
-              "Calcular"
-            )}
+          <input className="flex-1 p-3 border rounded" placeholder="CEP" value={cep} onChange={(e) => { setCep(e.target.value); buscarEndereco(e.target.value); }} />
+          <button onClick={consultarFrete} disabled={loadingFrete} className="px-3 py-2 bg-blue-600 text-white rounded disabled:bg-blue-300">
+            {loadingFrete ? "..." : "Calcular Frete"}
           </button>
         </div>
+
+        <input className="w-full p-3 border rounded" placeholder="Rua" value={rua} onChange={(e) => setRua(e.target.value)} />
+        <input className="w-full p-3 border rounded" placeholder="Número" value={numero} onChange={(e) => setNumero(e.target.value)} />
+        <input className="w-full p-3 border rounded" placeholder="Complemento (opcional)" value={complemento} onChange={(e) => setComplemento(e.target.value)} />
+        <input className="w-full p-3 border rounded" placeholder="Bairro" value={bairro} onChange={(e) => setBairro(e.target.value)} />
+        <input className="w-full p-3 border rounded" placeholder="Cidade" value={cidade} readOnly />
+        <input className="w-full p-3 border rounded" placeholder="Estado" value={estado} readOnly />
 
         {fretes.map((f) => (
           <label key={f.codigo} className="flex items-center gap-2 border p-3 rounded cursor-pointer">
@@ -166,14 +198,12 @@ export default function CheckoutForm({ produto, produtos }: CheckoutFormProps) {
 
         <button
           onClick={iniciarCheckout}
-          disabled={loadingCheckout}
-          className="mt-4 w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:bg-green-300"
+          disabled={loadingCheckout || !shippingMethod}
+          className={`mt-4 w-full py-3 rounded-lg font-semibold text-white 
+            ${!shippingMethod ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}
+          `}
         >
-          {loadingCheckout ? (
-            <div className="w-6 h-6 border-4 border-green-200 border-t-green-700 rounded-full animate-spin mx-auto"></div>
-          ) : (
-            "Finalizar Compra"
-          )}
+          {loadingCheckout ? "Processando..." : "Finalizar Compra"}
         </button>
       </div>
     </div>

@@ -5,14 +5,17 @@ import { useRouter } from "next/navigation";
 
 interface Product {
   id: string;
-  name: string;
-  marca: string;
-  modelo: string;
-  ano: string[];
-  fullPrice: string;
-  price: string;
-  description: string;
-  images: string[];
+  titulo?: string;
+  marca?: string;
+  modelo?: string;
+  fullPrice?: string;
+  price?: string | number;
+  description?: string;
+  images?: string[];
+  width?: number;
+  height?: number;
+  length?: number;
+  weight?: number;
 }
 
 export default function CarpetSelector() {
@@ -24,18 +27,19 @@ export default function CarpetSelector() {
 
   const [selectedMarca, setSelectedMarca] = useState("");
   const [selectedModelo, setSelectedModelo] = useState("");
-  const [selectedAno, setSelectedAno] = useState("");
 
-  // Carrega produtos do Firebase
+  // Carrega produtos (API ou rota que você tenha)
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
       setError("");
       try {
-        const res = await fetch("/api/products"); // API que retorna produtos
+        // Mantive fetch na rota /api/products como estava antes.
+        // Se preferir buscar diretamente do firestore, altere essa rota ou substitua por getDocs.
+        const res = await fetch("/api/products");
         if (!res.ok) throw new Error("Falha ao buscar produtos");
         const data: Product[] = await res.json();
-        setProducts(data);
+        setProducts(data || []);
       } catch (err) {
         console.error(err);
         setError("Erro ao carregar produtos");
@@ -47,9 +51,9 @@ export default function CarpetSelector() {
     fetchProducts();
   }, []);
 
-  // Computa marcas únicas
+  // Computa marcas únicas (somente valores válidos)
   const marcas = useMemo(() => {
-    const unique = Array.from(new Set(products.map((p) => p.marca)));
+    const unique = Array.from(new Set(products.map((p) => (p.marca || "").trim()).filter(Boolean)));
     return unique.map((m) => ({ value: m, label: m }));
   }, [products]);
 
@@ -57,23 +61,10 @@ export default function CarpetSelector() {
   const modelos = useMemo(() => {
     if (!selectedMarca) return [];
     const unique = Array.from(
-      new Set(products.filter((p) => p.marca === selectedMarca).map((p) => p.modelo))
+      new Set(products.filter((p) => (p.marca || "").trim() === selectedMarca).map((p) => (p.modelo || "").trim()).filter(Boolean))
     );
     return unique.map((m) => ({ value: m, label: m }));
   }, [products, selectedMarca]);
-
-  // Computa anos únicos do modelo selecionado
-  const anos = useMemo(() => {
-    if (!selectedMarca || !selectedModelo) return [];
-    const unique = Array.from(
-      new Set(
-        products
-          .filter((p) => p.marca === selectedMarca && p.modelo === selectedModelo)
-          .flatMap((p) => p.ano)
-      )
-    );
-    return unique.map((a) => ({ value: a, label: a }));
-  }, [products, selectedMarca, selectedModelo]);
 
   const handleVerTapete = () => {
     if (!selectedMarca || !selectedModelo) {
@@ -82,7 +73,7 @@ export default function CarpetSelector() {
     }
 
     const produtoSelecionado = products.find(
-      (p) => p.marca === selectedMarca && p.modelo === selectedModelo
+      (p) => (p.marca || "").trim() === selectedMarca && (p.modelo || "").trim() === selectedModelo
     );
 
     if (!produtoSelecionado) {
@@ -91,29 +82,26 @@ export default function CarpetSelector() {
     }
 
     const query = new URLSearchParams({ id: produtoSelecionado.id });
-    if (selectedAno) query.set("ano", selectedAno);
-
     router.push(`/Produtos?${query.toString()}`);
   };
 
   return (
     <div className="w-full max-w-md bg-[#1C1C1C] shadow-xl rounded-2xl p-6 flex flex-col gap-4 border border-gray-800">
-      <p className="text-white text-lg font-semibold">
-        Encontre o tapete para o seu veículo
-      </p>
+      <p className="text-white text-lg font-semibold">Encontre o tapete para o seu veículo</p>
 
       {error && <p className="text-red-500">{error}</p>}
 
       {/* Marca */}
       <select
         value={selectedMarca}
-        onChange={(e) => setSelectedMarca(e.target.value)}
-        disabled={loading}
+        onChange={(e) => {
+          setSelectedMarca(e.target.value);
+          setSelectedModelo("");
+        }}
+        disabled={loading || marcas.length === 0}
         className="bg-black border border-gray-700 rounded-lg p-3 text-gray-300 focus:ring-2 focus:ring-[#E30613] focus:outline-none"
       >
-        <option value="">
-          {loading ? "Carregando marcas..." : "Selecione a marca"}
-        </option>
+        <option value="">{loading ? "Carregando marcas..." : marcas.length ? "Selecione a marca" : "Nenhuma marca cadastrada"}</option>
         {marcas.map((marca) => (
           <option key={marca.value} value={marca.value}>
             {marca.label}
@@ -128,38 +116,13 @@ export default function CarpetSelector() {
         disabled={!selectedMarca || loading}
         className="bg-black border border-gray-700 rounded-lg p-3 text-gray-300 focus:ring-2 focus:ring-[#E30613] focus:outline-none"
       >
-        <option value="">
-          {loading
-            ? "Carregando modelos..."
-            : selectedMarca
-            ? "Selecione o modelo"
-            : "Selecione a marca primeiro"}
-        </option>
+        <option value="">{loading ? "Carregando modelos..." : selectedMarca ? "Selecione o modelo" : "Selecione a marca primeiro"}</option>
         {modelos.map((modelo) => (
           <option key={modelo.value} value={modelo.value}>
             {modelo.label}
           </option>
         ))}
       </select>
-
-      {/* Ano */}
-      {anos.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {anos.map((ano) => (
-            <button
-              key={ano.value}
-              onClick={() => setSelectedAno(ano.value)}
-              className={`px-4 py-2 border rounded-lg font-semibold transition-all ${
-                selectedAno === ano.value
-                  ? "text-white border-green-600"
-                  : "bg-transparent text-gray-300 border-gray-400 hover:bg-gray-700"
-              }`}
-            >
-              {ano.label}
-            </button>
-          ))}
-        </div>
-      )}
 
       <button
         onClick={handleVerTapete}

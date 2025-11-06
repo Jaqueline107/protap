@@ -148,7 +148,7 @@ function ProdutosContent() {
         {/* Informações */}
         <div className="w-full lg:w-1/2 flex flex-col justify-start mt-6 gap-3 lg:mt-0">
           <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
-          <h2 className="text-2xl font-bold text-gray-400 line-through">{product.fullPrice}</h2>
+          <h2 className="text-2xl font-bold text-gray-400 line-through">R${product.fullPrice}</h2>
 
           <div className="flex gap-3">
             <p className="text-gray-700 text-4xl font-bold">
@@ -196,7 +196,7 @@ function ProdutosContent() {
             </div>
           </div>
 
-          <div className="mt-6 p-4 bg-gray-100 rounded-lg shadow-inner max-h-60 overflow-y-auto">
+          <div className="mt-6 mb-7 p-4 bg-gray-100 rounded-lg shadow-inner max-h-60 overflow-y-auto">
             <h2 className="text-xl font-semibold mb-2">Descrição do Produto</h2>
             <p className="text-gray-700 leading-relaxed">{product.description}</p>
           </div>
